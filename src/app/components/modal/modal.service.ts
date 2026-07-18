@@ -6,6 +6,8 @@ import { ModalComponent } from './modal.component';
 import { WelcomeComponent } from './welcome.component';
 
 export interface DialogData {
+  cancelLabel?: string;
+  confirmLabel?: string;
   content: string;
   title: string;
   details?: string;
@@ -34,6 +36,30 @@ export class ModalService {
         data: {
           content: content,
           details: details,
+          title: title,
+        }
+      }
+    );
+
+    return dialogRef.afterClosed();
+  }
+
+  /**
+   * Opens a confirmation dialog and emits `true` only when the user confirms.
+   */
+  openConfirmationDialog(
+    title: string,
+    content: string,
+    confirmLabel: string,
+    cancelLabel: string,
+  ) {
+    const dialogRef = this.dialog.open(
+      ModalComponent,
+      {
+        data: {
+          cancelLabel: cancelLabel,
+          confirmLabel: confirmLabel,
+          content: content,
           title: title,
         }
       }

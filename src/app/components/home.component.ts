@@ -2226,9 +2226,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
    * Deletes a file (moves to recycling bin / trash) or dangerously deletes (bypassing trash)
    */
   deleteThisFile(item: ImageElement): void {
-    const base: string = this.sourceFolderService.selectedSourceFolder[item.inputSource].path;
     const dangerously: boolean = this.settingsButtons['dangerousDelete'].toggled;
-    this.electronService.ipcRenderer.send('delete-video-file', base, item, dangerously);
+    const messageKey: string = dangerously
+      ? 'RIGHTCLICK.confirmPermanentDeleteMessage'
+      : 'RIGHTCLICK.confirmDeleteMessage';
+
+    this.modalService.openConfirmationDialog(
+      this.translate.instant('RIGHTCLICK.confirmDeleteTitle'),
+      this.translate.instant(messageKey, { fileName: item.fileName }),
+      this.translate.instant('RIGHTCLICK.delete'),
+      this.translate.instant('SYSTEM.cancel'),
+    ).subscribe((confirmed: boolean) => {
+      if (!confirmed) {
+        return;
+      }
+
+      const base: string = this.sourceFolderService.selectedSourceFolder[item.inputSource].path;
+      this.electronService.ipcRenderer.send('delete-video-file', base, item, dangerously);
+    });
   }
 
   /**

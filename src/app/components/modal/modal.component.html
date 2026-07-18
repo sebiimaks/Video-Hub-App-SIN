@@ -10,3 +10,21 @@
   {{ data?.details }}
 </span>
 
+@if (data.cancelLabel && data.confirmLabel) {
+  <div class="dialog-actions">
+    <button
+      (click)="close(false)"
+      class="dialog-button"
+      type="button"
+    >
+      {{ data.cancelLabel }}
+    </button>
+    <button
+      (click)="close(true)"
+      class="dialog-button dialog-button-delete"
+      type="button"
+    >
+      {{ data.confirmLabel }}
+    </button>
+  </div>
+}

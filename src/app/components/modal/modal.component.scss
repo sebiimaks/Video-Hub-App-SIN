@@ -1,3 +1,5 @@
+@use "../variables";
+
 h1 {
   font-size: 16px;
   margin-bottom: 20px;
@@ -11,4 +13,27 @@ span {
 
 .message {
   font-style: italic;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin: 20px 10px 10px;
+}
+
+.dialog-button {
+  background: variables.$gray-10;
+  border: 1px solid variables.$gray-40;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 80px;
+  padding: 8px 14px;
+}
+
+.dialog-button-delete {
+  background: variables.$pretty-red;
+  border-color: variables.$dark-red;
+  color: variables.$black;
+  font-weight: bold;
 }

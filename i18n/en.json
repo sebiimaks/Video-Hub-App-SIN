@@ -249,6 +249,9 @@
   },
   "RIGHTCLICK": {
     "cancelRename": "cancel rename",
+    "confirmDeleteMessage": "Move “{{ fileName }}” to the trash / recycling bin?",
+    "confirmDeleteTitle": "Delete file?",
+    "confirmPermanentDeleteMessage": "Permanently delete “{{ fileName }}”? This cannot be undone.",
     "delete": "Delete",
     "errorFileNameExists": "A file exists with this filename",
     "errorFileNotFound": "Original file could not be found",
