@@ -6,15 +6,11 @@
     "output": "release/"
   },
   "files": [
-    "**/*",
-    "!**/*.ts",
-    "!LICENSE.md",
-    "!package.json",
-    "!package-lock.json",
-    "!src/",
-    "!angular.json",
-    "!tsconfig.json",
-    "!tslint.json"
+    "dist/**/*",
+    "main.js",
+    "node/**/*.js",
+    "interfaces/**/*.js",
+    "i18n/*.json"
   ],
   "extraResources": [
     {
