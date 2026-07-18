@@ -69,7 +69,7 @@ export class TopComponent {
 
   fileWordClicked(item: string): void {
     // Strip away any of: {}()[].,
-    const regex = /{|}|\(|\)|\[|\]|\.|\,/g;
+    const regex = /{|}|\(|\)|\[|\]|\.|,/g;
     item = item.replace(regex, '');
     this.onFileWordClicked.emit(item.trim());
   }

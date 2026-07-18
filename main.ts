@@ -251,7 +251,9 @@ try {
     });
   });
 
-} catch {}
+} catch {
+  // Ignore file protocol registration errors and continue starting the app.
+}
 
 if (GLOBALS.macVersion) {
   systemPreferences.subscribeNotification(

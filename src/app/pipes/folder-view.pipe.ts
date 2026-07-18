@@ -201,7 +201,7 @@ export class FolderViewPipe implements PipeTransform {
 
         upButton.cleanName   = '*FOLDER*';
         upButton.fileName    = '*UP*';
-        upButton.partialPath = prefixPath.substring(0, prefixPath.lastIndexOf('/')),
+        upButton.partialPath = prefixPath.substring(0, prefixPath.lastIndexOf('/'));
 
         arrWithFolders.push(upButton);
       }
@@ -217,18 +217,18 @@ export class FolderViewPipe implements PipeTransform {
 
           const folderWithStuff: ImageElement = NewImageElement();
 
-          folderWithStuff.cleanName       = '*FOLDER*',
-          folderWithStuff.duration        = folderProperties.duration,
-          folderWithStuff.fileName        = key.replace('/', ''),
-          folderWithStuff.fileSize        = folderProperties.byteSize,
-          folderWithStuff.fileSizeDisplay = value.length.toString(), // indicates the number of files in the folder!
-          folderWithStuff.hash            = this.extractFourPreviewHashes(value),
-          folderWithStuff.index           = -1, // always show at the top (but after the `UP` folder) in the default view
-          folderWithStuff.mtime           = folderProperties.mtime,
-          folderWithStuff.birthtime       = folderProperties.birthtime,
-          folderWithStuff.partialPath     = (prefixPath || '/') + key, // must set this for the folder click to register!
-          folderWithStuff.stars           = folderProperties.starAverage,
-          folderWithStuff.uuid            = folderProperties.uuid,
+          folderWithStuff.cleanName       = '*FOLDER*';
+          folderWithStuff.duration        = folderProperties.duration;
+          folderWithStuff.fileName        = key.replace('/', '');
+          folderWithStuff.fileSize        = folderProperties.byteSize;
+          folderWithStuff.fileSizeDisplay = value.length.toString(); // indicates the number of files in the folder!
+          folderWithStuff.hash            = this.extractFourPreviewHashes(value);
+          folderWithStuff.index           = -1; // always show at the top (but after the `UP` folder) in the default view
+          folderWithStuff.mtime           = folderProperties.mtime;
+          folderWithStuff.birthtime       = folderProperties.birthtime;
+          folderWithStuff.partialPath     = (prefixPath || '/') + key; // must set this for the folder click to register!
+          folderWithStuff.stars           = folderProperties.starAverage;
+          folderWithStuff.uuid            = folderProperties.uuid;
 
           arrWithFolders.push(folderWithStuff);
         }

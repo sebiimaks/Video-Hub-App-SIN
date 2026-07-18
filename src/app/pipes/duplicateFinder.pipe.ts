@@ -8,6 +8,8 @@ import type { ImageElement } from '../../../interfaces/final-object.interface';
 type DupeType = 'length'   | 'size'     | 'hash';
 type SortBy =   'timeDesc' | 'sizeDesc' | 'hash';
 type Feature =  'duration' | 'fileSize' | 'hash';
+type FeatureValue = ImageElement[Feature];
+type FeatureComparison = (a: FeatureValue, b: FeatureValue) => boolean;
 
 @Pipe({
   standalone: false,
@@ -31,9 +33,9 @@ export class DuplicateFinderPipe implements PipeTransform {
     } else {
 
       let sortBy: SortBy = undefined;
-      let initial: any = undefined; // number | string
+      let initial: FeatureValue = undefined;
       let feature: Feature = undefined;
-      let comparison: Function = undefined;
+      let comparison: FeatureComparison = undefined;
 
       switch (dupeType) {
         case 'length':
@@ -41,7 +43,7 @@ export class DuplicateFinderPipe implements PipeTransform {
           sortBy = 'timeDesc';
           initial = 0;
           feature = 'duration';
-          comparison = (a, b): boolean => { return Math.abs(a - b) < 1; };
+          comparison = (a, b): boolean => { return Math.abs(Number(a) - Number(b)) < 1; };
           break;
 
       case 'size':
@@ -49,7 +51,7 @@ export class DuplicateFinderPipe implements PipeTransform {
           sortBy = 'sizeDesc';
           initial = 0;
           feature = 'fileSize';
-          comparison = (a, b): boolean => { return Math.abs(a - b) < 500; };
+          comparison = (a, b): boolean => { return Math.abs(Number(a) - Number(b)) < 500; };
           break;
 
         case 'hash':
@@ -69,7 +71,7 @@ export class DuplicateFinderPipe implements PipeTransform {
 
       const duplicateArray: ImageElement[] = [];
 
-      let featureTracker: any = initial; // number | string
+      let featureTracker: FeatureValue = initial;
       let lastIndex = -1; // keep track of the index of the last item pushed to duplicateArray
 
       sortedByFeature.forEach((element, idx) => {

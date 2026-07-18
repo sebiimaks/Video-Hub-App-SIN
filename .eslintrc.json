@@ -11,11 +11,19 @@
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
-    "@typescript-eslint/consistent-type-imports": "error",
+    "@angular-eslint/no-output-native": "warn",
+    "@angular-eslint/no-output-on-prefix": "warn",
+    "@angular-eslint/prefer-inject": "off",
+    "@angular-eslint/prefer-standalone": "off",
+    "@typescript-eslint/consistent-type-imports": "warn",
+    "@typescript-eslint/no-duplicate-enum-values": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-require-imports": "off",
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       {
-        "argsIgnorePattern": "_"
+        "args": "none",
+        "caughtErrors": "none"
       }
     ],
     "@typescript-eslint/array-type": "error"

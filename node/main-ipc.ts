@@ -394,14 +394,18 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
           try {
             GLOBALS.readyToQuit = true;
             BrowserWindow.getFocusedWindow().close();
-          } catch {}
+          } catch {
+            // The window may already be closed while the app is quitting.
+          }
         });
 
       } else {
         try {
           GLOBALS.readyToQuit = true;
           BrowserWindow.getFocusedWindow().close();
-        } catch {}
+        } catch {
+          // The window may already be closed while the app is quitting.
+        }
       }
     });
   });

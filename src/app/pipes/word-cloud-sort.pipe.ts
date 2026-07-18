@@ -11,8 +11,7 @@ export class WordCloudSortPipe implements PipeTransform {
 
   transform(cloudElements: WordFreqAndHeight[], sort: boolean): WordFreqAndHeight[] {
     if (sort) {
-      let sortedCloudElements: WordFreqAndHeight[];
-      sortedCloudElements = cloudElements.toSorted((a, b) => (a['word'] < b['word']) ? -1 : 1);
+      const sortedCloudElements: WordFreqAndHeight[] = cloudElements.toSorted((a, b) => (a['word'] < b['word']) ? -1 : 1);
 
       return sortedCloudElements;
     } else {

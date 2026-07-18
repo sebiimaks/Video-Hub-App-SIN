@@ -113,29 +113,32 @@ export class SortingPipe implements PipeTransform {
       case 'aspectRatio':
         return compareValues(x.width / x.height, y.width / y.height);
 
-      case 'folderSize':
+      case 'folderSize': {
         // want non-folders to be considered "less than" a folder so give negative value by default.
         const xDisplay = (x.cleanName === '*FOLDER*') ? parseInt(x.fileSizeDisplay, 10) : -Infinity;
         const yDisplay = (y.cleanName === '*FOLDER*') ? parseInt(y.fileSizeDisplay, 10) : -Infinity;
         return compareValues(xDisplay, yDisplay);
+      }
 
       case 'hash':
         return compareValues(x.hash, y.hash);
 
-      case 'stars':
+      case 'stars': {
         // handle `stars` case:  show properties that are not empty first
         const xStarsValue = x.stars === <StarRating>(<unknown>0.5) ? (decreasing ? Infinity : 0) : x.stars;
         const yStarsValue = y.stars === <StarRating>(<unknown>0.5) ? (decreasing ? Infinity : 0) : y.stars;
         return compareValues(xStarsValue, yStarsValue);
+      }
 
       case 'tags':
         return compareValues((x.tags || []).length, (y.tags || []).length);
 
-      case 'year':
+      case 'year': {
         // handle `year` case: show properties that are not empty first
         const xYearValue = x.year || (decreasing ? Infinity : 0);
         const yYearValue = y.year || (decreasing ? Infinity : 0);
         return compareValues(xYearValue, yYearValue);
+      }
 
       default:
         return compareValues(x[property], y[property]);

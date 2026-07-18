@@ -67,9 +67,11 @@ export class ImageElementService {
 
     this.imageElements[index].lastPlayed = Date.now(); // update `lastPlayed`
 
-    this.imageElements[index].timesPlayed
-      ? this.imageElements[index].timesPlayed++
-      : this.imageElements[index].timesPlayed = 1;     // update `timesPlayed`
+    if (this.imageElements[index].timesPlayed) {
+      this.imageElements[index].timesPlayed++;
+    } else {
+      this.imageElements[index].timesPlayed = 1;
+    }
 
     this.finalArrayNeedsSaving = true;
   }
@@ -115,9 +117,11 @@ export class ImageElementService {
    */
   updatePlaylist(index: number): void {
 
-    this.imageElements[index].playlist
-      ? delete this.imageElements[index].playlist
-      : this.imageElements[index].playlist = Date.now();
+    if (this.imageElements[index].playlist) {
+      delete this.imageElements[index].playlist;
+    } else {
+      this.imageElements[index].playlist = Date.now();
+    }
 
     this.finalArrayNeedsSaving = true;
   }

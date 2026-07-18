@@ -96,7 +96,7 @@ export class ShortcutsService {
    * Restore user's preferred keys
    * @param keyToAction
    */
-  initializeFromSaved(keyToAction: Object): void {
+  initializeFromSaved(keyToAction: object): void {
     this.actionToKeyMap.clear();
     this.keyToActionMap.clear();
 

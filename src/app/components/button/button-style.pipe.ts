@@ -14,7 +14,7 @@ export class ButtonStylePipe implements PipeTransform {
    * @param darkMode  - whether app is in dark mode
    * @param flatIcons - whether app uses flat icons
    */
-  transform(toggled: boolean, darkMode: boolean, flatIcons: boolean): Object {
+  transform(toggled: boolean, darkMode: boolean, flatIcons: boolean): object {
 
     return {
       flatSettingsButton:                flatIcons,
