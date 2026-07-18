@@ -1,0 +1,340 @@
+@use "../variables";
+
+.catalogue-editor-backdrop {
+  background: rgba(0, 0, 0, 0.35);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 20px;
+  z-index: 7600;
+}
+
+.catalogue-editor {
+  background: variables.$gray-05;
+  border: 1px solid variables.$gray-40;
+  border-radius: 8px;
+  bottom: 18px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  color: variables.$gray-90;
+  display: flex;
+  flex-direction: column;
+  left: 18px;
+  min-height: 420px;
+  overflow: hidden;
+  position: fixed;
+  right: 18px;
+  top: 32px;
+  z-index: 7700;
+}
+
+.catalogue-editor-header {
+  align-items: center;
+  background: variables.$gray-15;
+  border-bottom: 1px solid variables.$gray-30;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 14px 0 18px;
+}
+
+.catalogue-editor-title {
+  min-width: 0;
+
+  h2 {
+    color: variables.$gray-80;
+    font-size: 16px;
+    line-height: 1;
+    margin: 0 0 6px;
+  }
+
+  span {
+    color: variables.$gray-60;
+    display: block;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.catalogue-icon-button {
+  background: transparent;
+  border: 0;
+  fill: variables.$gray-70;
+  height: 24px;
+  padding: 4px;
+  width: 24px;
+}
+
+.catalogue-editor-toolbar {
+  align-items: center;
+  background: variables.$gray-10;
+  border-bottom: 1px solid variables.$gray-30;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(210px, 1fr) 140px auto auto;
+  padding: 10px 12px;
+}
+
+.catalogue-search,
+.catalogue-editor-toolbar select,
+.catalogue-row input,
+.catalogue-row select,
+.catalogue-row textarea {
+  background: variables.$white;
+  border: 1px solid variables.$gray-40;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: variables.$gray-90;
+  font-size: 12px;
+  min-width: 0;
+  outline: none;
+  padding: 4px 6px;
+  user-select: text;
+
+  &:focus {
+    border-color: variables.$pretty-blue;
+    box-shadow: 0 0 0 1px rgba(114, 154, 255, 0.25);
+  }
+}
+
+.catalogue-toggle {
+  align-items: center;
+  color: variables.$gray-70;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  white-space: nowrap;
+
+  input {
+    margin: 0;
+  }
+}
+
+.catalogue-save,
+.catalogue-delete,
+.catalogue-restore {
+  border: 1px solid variables.$gray-40;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 12px;
+  min-height: 28px;
+  padding: 5px 10px;
+}
+
+.catalogue-save {
+  background: variables.$pretty-blue;
+  border-color: variables.$dark-blue;
+  color: variables.$white;
+
+  &:disabled {
+    background: variables.$gray-40;
+    border-color: variables.$gray-50;
+    cursor: default;
+  }
+}
+
+.catalogue-editor-status {
+  align-items: center;
+  background: variables.$gray-05;
+  border-bottom: 1px solid variables.$gray-20;
+  color: variables.$gray-60;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11px;
+  gap: 12px;
+  min-height: 28px;
+  padding: 0 12px;
+}
+
+.pending-delete {
+  color: variables.$dark-red;
+}
+
+.save-status {
+  color: variables.$pretty-green;
+  margin-left: auto;
+}
+
+.save-status-error {
+  color: variables.$pretty-red;
+}
+
+.catalogue-column-header {
+  background: variables.$gray-15;
+  border-bottom: 1px solid variables.$gray-30;
+  color: variables.$gray-60;
+  display: grid;
+  font-size: 11px;
+  font-weight: bold;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  padding: 7px 12px;
+  text-transform: uppercase;
+}
+
+.catalogue-editor-body {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  @include variables.scrollBar;
+}
+
+.catalogue-row {
+  background: variables.$gray-05;
+  border-bottom: 1px solid variables.$gray-20;
+  box-sizing: border-box;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  min-height: 118px;
+  padding: 10px 12px;
+}
+
+.catalogue-row-deleted {
+  background: #ffe6e6;
+  opacity: 0.72;
+}
+
+.catalogue-row-fields {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(180px, 1.15fr) minmax(180px, 1.15fr) minmax(120px, 0.7fr) minmax(160px, 0.95fr) 82px;
+  min-width: 0;
+}
+
+.catalogue-row label {
+  color: variables.$gray-60;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  gap: 3px;
+  min-width: 0;
+}
+
+.catalogue-row input,
+.catalogue-row select {
+  height: 26px;
+}
+
+.notes-field {
+  grid-column: span 2;
+
+  textarea {
+    height: 42px;
+    resize: vertical;
+  }
+}
+
+.catalogue-readonly {
+  align-content: flex-start;
+  color: variables.$gray-60;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11px;
+  gap: 6px 10px;
+  grid-column: 1 / -1;
+  min-width: 0;
+
+  span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.catalogue-row-actions {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.catalogue-delete {
+  background: variables.$pretty-red-lighter;
+  border-color: variables.$pretty-red;
+  color: variables.$dark-red;
+}
+
+.catalogue-restore {
+  background: variables.$pretty-green;
+  border-color: variables.$pretty-green;
+  color: variables.$white;
+}
+
+.catalogue-no-results {
+  color: variables.$gray-50;
+  font-size: 13px;
+  padding: 20px;
+  text-align: center;
+}
+
+.catalogue-editor-dark {
+  background: variables.$gray-85;
+  border-color: variables.$black;
+  color: variables.$gray-10;
+
+  .catalogue-editor-header,
+  .catalogue-editor-toolbar,
+  .catalogue-column-header {
+    background: variables.$gray-80;
+    border-color: variables.$black;
+  }
+
+  .catalogue-editor-title h2 {
+    color: variables.$gray-10;
+  }
+
+  .catalogue-editor-title span,
+  .catalogue-editor-status,
+  .catalogue-row label,
+  .catalogue-readonly,
+  .catalogue-column-header,
+  .catalogue-toggle {
+    color: variables.$gray-30;
+  }
+
+  .catalogue-editor-status,
+  .catalogue-row {
+    background: variables.$gray-85;
+    border-color: variables.$gray-80;
+  }
+
+  .catalogue-row-deleted {
+    background: #3b2222;
+  }
+
+  .catalogue-search,
+  .catalogue-editor-toolbar select,
+  .catalogue-row input,
+  .catalogue-row select,
+  .catalogue-row textarea {
+    background: variables.$gray-90;
+    border-color: variables.$gray-60;
+    color: variables.$gray-10;
+  }
+}
+
+@media (max-width: 980px) {
+  .catalogue-editor-toolbar {
+    grid-template-columns: minmax(180px, 1fr) 125px;
+  }
+
+  .catalogue-row,
+  .catalogue-column-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .catalogue-row-fields {
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr);
+  }
+
+  .catalogue-row-actions {
+    align-items: flex-start;
+  }
+}

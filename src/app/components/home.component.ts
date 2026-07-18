@@ -294,6 +294,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   currentPlayingFolder = '';
   fullPathToCurrentFile = '';
 
+  catalogueEditorOpen = false;
+  catalogueEditorSaveStatus = '';
+  catalogueEditorSaving = false;
+
   fuzzySearchString = '';
   startsWithSearchString = '';
   magicSearchString = '';
@@ -854,6 +858,23 @@ export class HomeComponent implements OnInit, AfterViewInit {
       }
     });
 
+    this.electronService.ipcRenderer.on('current-vha-file-saved', () => {
+      this.catalogueEditorSaving = false;
+      this.catalogueEditorSaveStatus = 'Saved';
+      this.imageElementService.finalArrayNeedsSaving = false;
+      this.autoTagsSaveService.restoreSavedTags(
+        this.autoTagsSaveService.getAddTags(),
+        this.autoTagsSaveService.getRemoveTags()
+      );
+      this.cd.detectChanges();
+    });
+
+    this.electronService.ipcRenderer.on('current-vha-file-save-failed', (event, errorMessage: string) => {
+      this.catalogueEditorSaving = false;
+      this.catalogueEditorSaveStatus = errorMessage ? 'Save failed: ' + errorMessage : 'Save failed';
+      this.cd.detectChanges();
+    });
+
     // gets called for every element that node extracted metadata for (screenshots not yet extracted)
     this.electronService.ipcRenderer.on('new-video-meta', (event, element: ImageElement) => {
 
@@ -1057,6 +1078,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   public loadFromFile(): void {
     this.electronService.ipcRenderer.send('system-open-file-through-modal');
+  }
+
+  public saveCurrentVhaFile(): void {
+    const finalObjectToSave = this.getFinalObjectForSaving();
+
+    if (finalObjectToSave === null) {
+      this.catalogueEditorSaveStatus = 'No changes to save';
+      return;
+    }
+
+    this.catalogueEditorSaving = true;
+    this.catalogueEditorSaveStatus = '';
+    this.electronService.ipcRenderer.send('save-current-vha-file', finalObjectToSave);
   }
 
   public selectSourceDirectory(): void {
@@ -1976,6 +2010,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
    */
   toggleRibbon(): void {
     this.appState.menuHidden = !this.appState.menuHidden;
+  }
+
+  openCatalogueEditor(): void {
+    this.catalogueEditorOpen = true;
+    this.catalogueEditorSaveStatus = '';
+  }
+
+  handleCatalogueEntriesChanged(): void {
+    const activeImages = this.imageElementService.imageElements.filter((element: ImageElement) => !element.deleted);
+
+    this.deletePipeTrigger = !this.deletePipeTrigger;
+    this.setUpTimesPlayedFilterValues(activeImages);
+    this.setUpYearFilterValues(activeImages);
   }
 
   // ---- HANDLE EXTRACTING AND RESTORING SETTINGS ON OPEN AND BEFORE CLOSE ------

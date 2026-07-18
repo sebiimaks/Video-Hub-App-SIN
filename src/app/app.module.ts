@@ -37,6 +37,7 @@ import { AddTagComponent } from './components/tags-manual/add-tag.component';
 import { AppComponent } from './app.component';
 import { BreadcrumbsComponent } from './components/breadcrumbs/breadcrumbs.component';
 import { ButtonComponent } from './components/button/button.component';
+import { CatalogueEditorComponent } from './components/catalogue-editor/catalogue-editor.component';
 import { ClipComponent } from './components/views/clip/clip.component';
 import { DetailsComponent } from './components/views/details/details.component';
 import { DonutComponent } from './components/donut/donut.component';
@@ -126,6 +127,7 @@ import { YearPipe } from './pipes/year.pipe';
     BreadcrumbsComponent,
     ButtonComponent,
     ButtonStylePipe,
+    CatalogueEditorComponent,
     ClipComponent,
     CountPipe,
     DeleteFilePipe,

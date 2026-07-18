@@ -13,6 +13,20 @@
     [settingsButtons]="settingsButtons"
    />
 
+@if (catalogueEditorOpen) {
+  <app-catalogue-editor
+    (closeEditor)="catalogueEditorOpen = false"
+    (entriesChanged)="handleCatalogueEntriesChanged()"
+    (saveRequested)="saveCurrentVhaFile()"
+
+    [currentVhaFile]="appState.currentVhaFile"
+    [darkMode]="settingsButtons['darkMode'].toggled"
+    [images]="imageElementService.imageElements"
+    [isSaving]="catalogueEditorSaving"
+    [saveStatus]="catalogueEditorSaveStatus"
+   />
+}
+
 @if (flickerReduceOverlay === true) {
   <div
     class="reduceFlicker"
@@ -342,6 +356,14 @@
         title="{{ 'SETTINGS.settings' | translate }}"
       >
         <app-icon [icon]="'icon-gear'" />
+      </div>
+      <div
+        (click)="openCatalogueEditor()"
+        [ngClass]="{ catalogueEditorButtonActive: catalogueEditorOpen }"
+        class="catalogueEditorButton"
+        title="Edit catalogue JSON"
+      >
+        JSON
       </div>
     @if (importStage !== 'done' && settingsButtons['hideTop'].toggled) {
       <div

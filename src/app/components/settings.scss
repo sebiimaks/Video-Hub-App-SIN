@@ -30,6 +30,35 @@ h3 {
   }
 }
 
+.catalogueEditorButton {
+  border: 1px solid variables.$gray-40;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: variables.$gray-60;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  height: 20px;
+  letter-spacing: 0;
+  line-height: 18px;
+  position: absolute;
+  right: 34px;
+  text-align: center;
+  top: 6px;
+  transition: 200ms;
+  width: 38px;
+
+  &:hover {
+    background: variables.$gray-10;
+    color: variables.$gray-80;
+  }
+}
+
+.catalogueEditorButtonActive {
+  background: variables.$gray-40;
+  color: variables.$white;
+}
+
 .credits-and-help {
   color: variables.$gray-60;
   cursor: pointer;

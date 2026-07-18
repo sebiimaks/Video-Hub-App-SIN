@@ -440,15 +440,15 @@ function writeVhaFileAndStartExtraction(): void {
 }
 
 /**
- * Summon system modal to choose the *.vha2 file
+ * Summon system modal to choose a catalogue JSON file
  * open via `openThisDamnFile` method
  */
 ipcMain.on('system-open-file-through-modal', (event, somethingElse) => {  // TODO -- check -- do I need to save vha to disk?
   dialog.showOpenDialog(win, {
     title: systemMessages.selectPreviousHub,
     filters: [{
-      name: 'Video Hub App 2 files', // TODO -- i18n FIX ME
-      extensions: ['vha2']
+      name: 'Video Hub catalogue files', // TODO -- i18n FIX ME
+      extensions: ['vha2', 'json']
     }],
     properties: ['openFile']
   }).then(result => {

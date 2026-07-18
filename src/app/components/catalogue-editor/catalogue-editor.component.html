@@ -1,0 +1,224 @@
+<div
+  class="catalogue-editor-backdrop"
+  (click)="close()"
+></div>
+
+<section
+  class="catalogue-editor"
+  [ngClass]="{ 'catalogue-editor-dark': darkMode }"
+>
+  <header class="catalogue-editor-header">
+    <div class="catalogue-editor-title">
+      <h2>Catalogue JSON Editor</h2>
+      <span [title]="currentVhaFile">{{ currentVhaFile }}</span>
+    </div>
+
+    <button
+      class="catalogue-icon-button"
+      (click)="close()"
+      title="Close"
+    >
+      <app-icon class="close-modal-icon" [icon]="'icon-close'"></app-icon>
+    </button>
+  </header>
+
+  <div class="catalogue-editor-toolbar">
+    <input
+      class="catalogue-search"
+      [(ngModel)]="query"
+      (ngModelChange)="refreshFilteredEntries()"
+      placeholder="Search entries"
+      type="text"
+    >
+
+    <select
+      [(ngModel)]="field"
+      (ngModelChange)="refreshFilteredEntries()"
+      title="Search field"
+    >
+      <option value="all">All fields</option>
+      <option value="name">Clean name</option>
+      <option value="file">File name</option>
+      <option value="path">Folder</option>
+      <option value="tags">Tags</option>
+      <option value="hash">Hash</option>
+    </select>
+
+    <label class="catalogue-toggle">
+      <input
+        [(ngModel)]="showDeleted"
+        (change)="refreshFilteredEntries()"
+        type="checkbox"
+      >
+      <span>Show deleted</span>
+    </label>
+
+    <button
+      class="catalogue-save"
+      (click)="requestSave()"
+      [disabled]="isSaving"
+    >
+      {{ isSaving ? 'Saving...' : 'Save JSON' }}
+    </button>
+  </div>
+
+  <div class="catalogue-editor-status">
+    <span>{{ filteredEntries.length | number }} shown</span>
+    <span>{{ activeCount | number }} active</span>
+    <span>{{ totalCount | number }} total</span>
+    <span *ngIf="deletedCount" class="pending-delete">{{ deletedCount | number }} pending delete</span>
+    <span
+      *ngIf="saveStatus"
+      class="save-status"
+      [ngClass]="{ 'save-status-error': saveStatus.toLowerCase().indexOf('failed') > -1 }"
+    >
+      {{ saveStatus }}
+    </span>
+  </div>
+
+  <div class="catalogue-column-header">
+    <span>Editable fields</span>
+    <span>Entry action</span>
+  </div>
+
+  <virtual-scroller
+    #catalogueScroll
+    class="catalogue-editor-body"
+    [items]="filteredEntries"
+    [bufferAmount]="6"
+  >
+    <div
+      *ngFor="let item of catalogueScroll.viewPortItems; trackBy: trackByImageIndex"
+      class="catalogue-row"
+      [ngClass]="{ 'catalogue-row-deleted': item.deleted }"
+    >
+      <div class="catalogue-row-fields">
+        <label class="wide-field">
+          <span>Clean name</span>
+          <input
+            [ngModel]="item.cleanName"
+            (ngModelChange)="updateStringField(item, 'cleanName', $event)"
+            type="text"
+          >
+        </label>
+
+        <label class="wide-field">
+          <span>File name</span>
+          <input
+            [ngModel]="item.fileName"
+            (ngModelChange)="updateStringField(item, 'fileName', $event)"
+            type="text"
+          >
+        </label>
+
+        <label>
+          <span>Folder</span>
+          <input
+            [ngModel]="item.partialPath"
+            (ngModelChange)="updateStringField(item, 'partialPath', $event)"
+            type="text"
+          >
+        </label>
+
+        <label>
+          <span>Tags</span>
+          <input
+            [ngModel]="tagDraftFor(item)"
+            (ngModelChange)="updateTagDraft(item, $event)"
+            (blur)="commitTags(item)"
+            (keydown.enter)="commitTags(item)"
+            type="text"
+          >
+        </label>
+
+        <label>
+          <span>Stars</span>
+          <select
+            [ngModel]="item.stars"
+            (ngModelChange)="updateStar(item, $event)"
+          >
+            <option
+              *ngFor="let option of starOptions"
+              [ngValue]="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Year</span>
+          <input
+            [ngModel]="item.year"
+            (ngModelChange)="updateYear(item, $event)"
+            min="0"
+            type="number"
+          >
+        </label>
+
+        <label>
+          <span>Times played</span>
+          <input
+            [ngModel]="item.timesPlayed"
+            (ngModelChange)="updateNumberField(item, 'timesPlayed', $event)"
+            min="0"
+            type="number"
+          >
+        </label>
+
+        <label>
+          <span>Default screen</span>
+          <input
+            [ngModel]="item.defaultScreen"
+            (ngModelChange)="updateDefaultScreen(item, $event)"
+            min="0"
+            type="number"
+          >
+        </label>
+
+        <label class="notes-field">
+          <span>Notes</span>
+          <textarea
+            [ngModel]="item.notes"
+            (ngModelChange)="updateNotes(item, $event)"
+          ></textarea>
+        </label>
+
+        <div class="catalogue-readonly">
+          <span>#{{ item.index + 1 }}</span>
+          <span>source {{ item.inputSource }}</span>
+          <span>{{ item.duration | lengthPipe }}</span>
+          <span>{{ item.width }} x {{ item.height }}</span>
+          <span>{{ item.fileSize | fileSizePipe : true }}</span>
+          <span>{{ item.fps || 0 }} fps</span>
+          <span>{{ item.hash }}</span>
+        </div>
+      </div>
+
+      <div class="catalogue-row-actions">
+        <button
+          *ngIf="!item.deleted"
+          class="catalogue-delete"
+          (click)="deleteEntry(item)"
+        >
+          Delete entry
+        </button>
+
+        <button
+          *ngIf="item.deleted"
+          class="catalogue-restore"
+          (click)="restoreEntry(item)"
+        >
+          Restore
+        </button>
+      </div>
+    </div>
+  </virtual-scroller>
+
+  <div
+    *ngIf="filteredEntries.length === 0"
+    class="catalogue-no-results"
+  >
+    No matching entries
+  </div>
+</section>

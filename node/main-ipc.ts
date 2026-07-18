@@ -301,6 +301,23 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   });
 
   /**
+   * Save the currently open VHA file without closing the app.
+   */
+  ipc.on('save-current-vha-file', (event, finalObjectToSave: FinalObject) => {
+    if (finalObjectToSave !== null) {
+      writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, (err) => {
+        if (err) {
+          event.sender.send('current-vha-file-save-failed', err.message || err.toString());
+        } else {
+          event.sender.send('current-vha-file-saved');
+        }
+      });
+    } else {
+      event.sender.send('current-vha-file-saved');
+    }
+  });
+
+  /**
    * Summon system modal to choose OUTPUT directory
    * where the final .vha2 file, vha-folder, and all screenshots will be saved
    */
