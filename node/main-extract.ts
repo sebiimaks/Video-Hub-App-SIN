@@ -418,8 +418,8 @@ function setExtractionDurations(
   const sourceFactor = 1 + (sourceRatio * sourceRatio / 3); // square of ratio
 
   return {                                                                           // for me:
-    thumb:     500 * sourceFactor * thumbHeightFactor,                               // never above 800ms
-    filmstrip: 350 * sourceFactor * thumbHeightFactor * numOfScreens,                // rarely above 15s, but 4K 30screens took 50s
+    thumb:    2000 * sourceFactor * thumbHeightFactor,                               // original was 500; now 4x
+    filmstrip: 1400 * sourceFactor * thumbHeightFactor * numOfScreens,               // original was 350; now 4x
     clip:      350 * sourceFactor * clipHeightFactor * clipSnippets * snippetLength, // rarely above 15s
     clipThumb: 400 * clipHeightRatio,                                                // never above 600ms
   };

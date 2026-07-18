@@ -75,6 +75,25 @@ export class ImageElementService {
   }
 
   /**
+   * Reset the number of times played for every file in the current hub.
+   */
+  resetTimesPlayed(): void {
+    let changed = false;
+
+    this.imageElements.forEach((element: ImageElement) => {
+      if (element.timesPlayed !== 0) {
+        element.timesPlayed = 0;
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      this.imageElements = this.imageElements.slice();
+      this.finalArrayNeedsSaving = true;
+    }
+  }
+
+  /**
    * Toggle heart
    */
   toggleHeart(index: number): void {

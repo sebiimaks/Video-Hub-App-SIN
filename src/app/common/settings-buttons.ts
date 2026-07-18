@@ -39,6 +39,7 @@ export type SettingsButtonKey = 'autoFileTags'
  | 'randomizeFoldersScreenshots'
  | 'regex'
  | 'resetSettings'
+ | 'resetTimesPlayed'
  | 'resolutionFilter'
  | 'returnToFirstScreenshot'
  | 'showClips'
@@ -210,6 +211,7 @@ export const SettingsButtonsGroups: SettingsButtonKey[][] = [
   [ // 14 - Create a new hub ---------------------------- 3rd tab
     'startWizard',
     'resetSettings', // Various settings
+    'resetTimesPlayed',
     'clearHistory',
     'showDeleteOption',
     'dangerousDelete',
@@ -570,6 +572,12 @@ export const SettingsButtons: SettingsButtonsType = {
     hidden: false,
     settingsHeading: 'SETTINGS.variousSettings',
     title: 'BUTTONS.resetSettingsHint',
+    toggled: false
+  },
+  'resetTimesPlayed': {
+    description: 'BUTTONS.resetTimesPlayedDescription',
+    hidden: false,
+    title: 'BUTTONS.resetTimesPlayedHint',
     toggled: false
   },
   'resolutionFilter': {

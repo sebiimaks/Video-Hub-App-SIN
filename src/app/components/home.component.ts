@@ -200,7 +200,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // ------------------------------------------------------------------------
 
   timesPlayedCutoff = 0;
-  timesPlayedLeftBound = 0;
+  timesPlayedLeftBound = -1;
   timesPlayedRightBound = Infinity;
 
   // ========================================================================
@@ -1500,6 +1500,17 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Reset the Times Played metric for every file in the current hub.
+   */
+  resetTimesPlayed(): void {
+    this.imageElementService.resetTimesPlayed();
+    this.timesPlayedCutoff = 0;
+    this.timesPlayedLeftBound = -1;
+    this.timesPlayedRightBound = Infinity;
+    this.modalService.openSnackbar(this.translate.instant('SETTINGS.timesPlayedReset'));
+  }
+
+  /**
    * Show or hide settings
    */
   toggleSettings(): void {
@@ -1734,6 +1745,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.clearRecentlyViewedHistory();
     } else if (uniqueKey === 'resetSettings') {
       this.resetSettingsToDefault();
+    } else if (uniqueKey === 'resetTimesPlayed') {
+      this.resetTimesPlayed();
     } else if (uniqueKey === 'showTags') {
       if (this.settingsModalOpen) {
         this.settingsModalOpen = false;
@@ -2390,9 +2403,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   setUpTimesPlayedFilterValues(finalArray: ImageElement[]): void {
-    const timesPlayed: number[] = finalArray.map((element) => { return element.timesPlayed; });
+    const timesPlayed: number[] = finalArray.map((element) => { return element.timesPlayed || 0; });
 
-    this.timesPlayedCutoff = Math.max(...timesPlayed) + 3;
+    this.timesPlayedCutoff = Math.max(0, ...timesPlayed);
   }
 
   // need to filter otherwise cutoff will be NaN
@@ -2586,7 +2599,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.toggleButtonOff('sizeFilter');
 
     // Clear Times Played filter
-    this.timesPlayedLeftBound = 0;
+    this.timesPlayedLeftBound = -1;
     this.timesPlayedRightBound = Infinity;
     this.toggleButtonOff('timesPlayedFilter');
 
