@@ -13,7 +13,7 @@
   cursor: pointer;
   left: 8px;
   position: absolute;
-  top: 36px;
+  top: 44px;
   transition: 100ms;
   z-index: 20;
 
@@ -76,10 +76,10 @@
 }
 
 .total-found-dark {
-  color: variables.$gray-60;
+  color: variables.$gray-30;
 
   em {
-    color: variables.$gray-40;
+    color: variables.$gray-20;
   }
 }
 

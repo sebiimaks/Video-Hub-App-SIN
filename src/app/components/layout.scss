@@ -51,6 +51,10 @@
   width: 100vw;
 }
 
+.window-dark-mode {
+  color-scheme: dark;
+}
+
 .top-of-buttons {
   background-image: linear-gradient(to bottom, variables.$gray-10 0%, variables.$gray-20 100%);
   border-bottom: 1px solid variables.$gray-30;
@@ -87,7 +91,7 @@
   box-sizing: border-box;
   height: variables.$settings-height;
   overflow: hidden;
-  padding: 4px 36px 4px 5px;
+  padding: 7px 82px 7px 5px;
   position: absolute;
   transition: 300ms;
   transition-property: background-color;
@@ -96,12 +100,12 @@
 }
 
 .all-settings-dark-mode {
-  background-color: variables.$gray-80;
-  border-bottom: variables.$black;
+  background-color: variables.$gray-85;
+  border-bottom: 1px solid variables.$gray-70;
 }
 
 .all-settings-flat-icons {
-  padding: 6px 5px;
+  padding: 10px 82px 10px 5px;
 }
 
 .settings-modal {
@@ -148,7 +152,8 @@
 
 .sidebar-dark-mode {
   background: variables.$gray-90;
-  border: 1px solid variables.$black;
+  border-right: 1px solid variables.$gray-70;
+  color: variables.$gray-30;
 }
 
 .sidebar-hidden {
@@ -257,36 +262,39 @@
 }
 
 .bottom-tray-dark {
-  background: variables.$gray-90;
-  border-top: 1px solid variables.$gray-80;
+  background: variables.$gray-85;
+  border-top: 1px solid variables.$gray-60;
 
   button,
   span,
   input {
-    color: variables.$gray-40;
+    color: variables.$gray-20;
   }
 
   .tag-sort-by-toggle,
   .show-frequency {
-    color: variables.$gray-60;
+    color: variables.$gray-30;
   }
 
   input {
     &::placeholder {
-      color: variables.$gray-50 !important;
+      color: variables.$gray-30 !important;
     }
   }
 }
 
-.bottom-tray-tabs-dark {
+.all-settings-tabs.bottom-tray-tabs-dark {
   button {
-    background: variables.$gray-90 !important;
-    border: 1px solid #333333 !important;
-    color: white;
+    background: variables.$gray-80 !important;
+    border: 1px solid variables.$gray-60 !important;
+    color: variables.$gray-10;
   }
 
   .active-tab {
-    border-bottom: 1px solid variables.$gray-90 !important;
+    background: variables.$gray-85 !important;
+    border-bottom: 1px solid variables.$gray-85 !important;
+    border-top-color: variables.$pretty-blue !important;
+    color: variables.$white;
   }
 }
 

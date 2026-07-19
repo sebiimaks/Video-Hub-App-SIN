@@ -15,13 +15,13 @@ h3 {
 .gearButton {
   cursor: pointer;
   fill: variables.$gray-40;
-  font-size: 14px;
-  height: 15px;
+  font-size: 17px;
+  height: 18px;
   position: absolute;
-  right: 10px;
-  top: 8px;
+  right: 8px;
+  top: 11px;
   transition: 370ms;
-  width: 15px;
+  width: 18px;
 
   &:hover {
     fill: variables.$gray-50;
@@ -36,17 +36,17 @@ h3 {
   box-sizing: border-box;
   color: variables.$gray-60;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: bold;
-  height: 20px;
+  height: 24px;
   letter-spacing: 0;
-  line-height: 18px;
+  line-height: 22px;
   position: absolute;
-  right: 34px;
+  right: 32px;
   text-align: center;
-  top: 6px;
+  top: 8px;
   transition: 200ms;
-  width: 38px;
+  width: 46px;
 
   &:hover {
     background: variables.$gray-10;
@@ -134,8 +134,18 @@ h3 {
 .gearButtonActive {
   color: variables.$gray-60;
   transform: rotate(180deg);
-  transform-origin: 7.5px 7.5px;
+  transform-origin: 9px 9px;
   transition: 370ms;
+}
+
+.settings-modal-dark {
+  background-color: variables.$gray-85;
+  border-color: variables.$gray-60;
+  color: variables.$gray-10;
+
+  .modal-fade-out {
+    background: linear-gradient(variables.$gray-85, variables.$gray-85, transparent);
+  }
 }
 
 .buttonSpacer {
@@ -407,6 +417,22 @@ input[type="radio"]:checked:before {
     transition: 300ms;
     transition-property: text-shadow background-color;
     z-index: 10;
+  }
+}
+
+.all-settings-tabs.settings-tabs-dark {
+  button {
+    background-color: variables.$gray-80;
+    border-color: variables.$gray-60;
+    color: variables.$gray-10;
+  }
+
+  .active-tab {
+    background-color: variables.$gray-85;
+    border-bottom-color: variables.$gray-85;
+    border-top-color: variables.$pretty-blue;
+    color: variables.$white;
+    text-shadow: none;
   }
 }
 

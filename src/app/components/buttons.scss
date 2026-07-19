@@ -143,7 +143,7 @@ button {
   }
 
   & .icon {
-    fill: variables.$gray-40;
+    fill: variables.$gray-20;
   }
 }
 
@@ -156,5 +156,31 @@ button {
 
   & .icon {
     fill: white;
+  }
+}
+
+:host-context(.settings-modal-dark) {
+  .defaultSettingsButton {
+    background: variables.$gray-80;
+    border-color: variables.$gray-60;
+    color: variables.$gray-05;
+
+    &:hover {
+      background-color: variables.$gray-70;
+    }
+
+    & .icon {
+      fill: variables.$gray-20;
+    }
+  }
+
+  .defaultSettingsButtonToggled {
+    background: variables.$black !important;
+    border-color: variables.$gray-60;
+  }
+
+  .flatSettingsButton {
+    color: variables.$gray-05;
+    fill: variables.$gray-20;
   }
 }

@@ -143,6 +143,43 @@
   }
 }
 
+.manual-tag-tray-dark {
+  .tag-tray-menu-left {
+    border-right: 1px solid variables.$gray-70;
+  }
+
+  .manual-tag-tray-label {
+    color: variables.$gray-20;
+    opacity: 1;
+  }
+
+  .button-select-all,
+  .button-toggle-batch-mode,
+  .show-frequency,
+  .tag-sort-by-toggle {
+    color: variables.$gray-20;
+
+    &:hover {
+      color: variables.$light-blue;
+    }
+  }
+
+  .manual-tag-tray-filter {
+    background-color: variables.$gray-90;
+    border-color: variables.$gray-60;
+    color: variables.$gray-05;
+
+    &::placeholder {
+      color: variables.$gray-30;
+      opacity: 1;
+    }
+  }
+
+  .total-selected {
+    color: variables.$gray-20;
+  }
+}
+
 .batch-mode-button-container {
   position: absolute;
   bottom: 16px;

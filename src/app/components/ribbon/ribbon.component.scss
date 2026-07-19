@@ -2,8 +2,20 @@
   float: left;
   margin-bottom: 10px; // if ever app width is too small, buttons spill over; this pushes them below cutoff
   margin-right: 8px;
-  max-height: 23px;
+  max-height: 27px;
   z-index: 2;
+
+  .defaultSettingsButton {
+    max-height: 25px;
+    max-width: 25px;
+    min-height: 25px;
+    min-width: 25px;
+  }
+
+  .flatSettingsButton {
+    margin-right: 10px;
+    min-width: 18px;
+  }
 
   &:empty {
     display: none;

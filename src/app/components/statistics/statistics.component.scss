@@ -251,3 +251,27 @@
 .qrcode {
   transform: translate(22px, -53px);
 }
+
+:host-context(.settings-modal-dark) {
+  .stats-heading,
+  .watch-folder-note {
+    color: variables.$gray-20;
+  }
+
+  .title {
+    color: variables.$white;
+  }
+
+  .table-container .stats-table tr td:first-child:not(.span-both) {
+    color: variables.$gray-30;
+  }
+
+  .or {
+    color: variables.$gray-20;
+  }
+
+  .port-select {
+    background-color: variables.$gray-90;
+    color: variables.$gray-05;
+  }
+}

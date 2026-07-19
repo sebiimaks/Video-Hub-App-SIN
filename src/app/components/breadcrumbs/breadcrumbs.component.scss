@@ -7,9 +7,9 @@
   height: 30px;
   left: #{variables.$sidebar-width};
   overflow: hidden;
-  padding: 5px 5px 5px 28px;
+  padding: 5px 5px 5px 32px;
   position: absolute;
-  top: 32px;
+  top: variables.$settings-height;
   transition-duration: 300ms;
   transition-property: left, width;
   width: calc(100vw - #{variables.$sidebar-width});
@@ -24,13 +24,13 @@
     cursor: pointer;
     fill: variables.$gray-60;
     left: 7px;
-    max-height: 15px;
-    max-width: 15px;
+    max-height: 18px;
+    max-width: 18px;
     position: absolute;
-    top: 7px;
+    top: 6px;
     transition-duration: 200ms;
     transition-property: fill;
-    width: 15px;
+    width: 18px;
 
     &:hover {
       fill: variables.$dark-blue;

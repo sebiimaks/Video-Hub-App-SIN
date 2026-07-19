@@ -1,4 +1,7 @@
-<div class="manual-tag-tray">
+<div
+  class="manual-tag-tray"
+  [ngClass]="{ 'manual-tag-tray-dark': darkMode() }"
+>
 
   <div class="tag-tray-menu-left">
 
@@ -32,7 +35,7 @@
 
     <div class="batch-mode-instructions">
 
-      <span class="manual-tag-tray-label" style="color: #4D4D4D">
+      <span class="manual-tag-tray-label">
         {{ 'TAGS.clickVideoToSelect' | translate }}
       </span>
 

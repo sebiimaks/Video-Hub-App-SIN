@@ -1,3 +1,5 @@
+@use "../variables";
+
 .additional-extenstions-setting {
   font-size: 14px;
   font-style: italic;
@@ -30,4 +32,18 @@
 
 .player-settings-launch-args {
   margin-top: 0;
+}
+
+:host-context(.settings-modal-dark) {
+  .button-description-text,
+  .misc-settings {
+    color: variables.$gray-10;
+  }
+
+  input,
+  select {
+    background-color: variables.$gray-90;
+    border-color: variables.$gray-60;
+    color: variables.$gray-05;
+  }
 }

@@ -1,4 +1,7 @@
-<div class="window">
+<div
+  class="window"
+  [ngClass]="{ 'window-dark-mode': settingsButtons['darkMode'].toggled }"
+>
 
   <app-title-bar
     (initiateClose)="initiateClose()"
@@ -202,6 +205,7 @@
 @if (settingsModalOpen) {
   <div
     class="all-settings-tabs"
+    [ngClass]="{ 'settings-tabs-dark': settingsButtons['darkMode'].toggled }"
     @modalAnimation
   >
     <button (click)="settingTabToShow = 0" [ngClass]="{ 'active-tab': settingTabToShow === 0 }">
@@ -223,6 +227,7 @@
 
   <div
     class="settings-modal"
+    [ngClass]="{ 'settings-modal-dark': settingsButtons['darkMode'].toggled }"
     @modalAnimation
     #settingsModal
   >
@@ -324,7 +329,7 @@
   <div
     class="window-content"
     [ngStyle]="{
-      transform: appState.menuHidden ? 'translate(0, -32px)' : 'translate(0, 0)'
+      transform: appState.menuHidden ? 'translate(0, -40px)' : 'translate(0, 0)'
     }"
   >
 
@@ -355,7 +360,7 @@
         class="gearButton"
         title="{{ 'SETTINGS.settings' | translate }}"
       >
-        <app-icon [icon]="'icon-gear'" />
+        <app-icon [icon]="'icon-gear'" [size]="18" />
       </div>
       <div
         (click)="openCatalogueEditor()"

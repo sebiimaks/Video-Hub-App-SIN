@@ -73,3 +73,32 @@
     background-color: variables.$pretty-red-lighter;
   }
 }
+
+:host-context(.settings-modal-dark) {
+  .wizard-button {
+    background: variables.$gray-80;
+    border-color: variables.$gray-60;
+    color: variables.$gray-05;
+
+    &:hover {
+      background: variables.$gray-70;
+    }
+  }
+
+  .start-import {
+    background: variables.$gray-70;
+    border-color: variables.$pretty-blue;
+    color: variables.$white;
+    text-shadow: none;
+
+    &:hover {
+      background: variables.$gray-60;
+    }
+  }
+
+  .edit-mode-active {
+    background-color: variables.$pretty-red;
+    border-color: variables.$dark-red;
+    color: variables.$white;
+  }
+}

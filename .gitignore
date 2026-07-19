@@ -4,6 +4,7 @@
 
 /dist
 /release
+/release-test-*/
 /tmp
 /out-tsc
 /app-builds
