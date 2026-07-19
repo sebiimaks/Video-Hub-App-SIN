@@ -1,5 +1,7 @@
 # Security Policy
 
-### Reporting a Vulnerability
+## Reporting a Vulnerability
 
-Please feel free to email me `boris@videohubapp.com` or open an _Issue_ 🤝
+This repository is an unsupported personal fork. Report fork-specific vulnerabilities by emailing `github.sadness446@passmail.net` or opening an issue in [sebiimaks/Video-Hub-App-SIN](https://github.com/sebiimaks/Video-Hub-App-SIN/issues).
+
+Please do not direct support or vulnerability reports for this fork to the original developer.

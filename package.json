@@ -1,12 +1,12 @@
 {
-  "name": "video-hub-app-3",
-  "productName": "Video Hub App 3",
-  "version": "3.3.0-sin.3",
-  "description": "Video Hub App 3 - browse, search, preview your videos",
-  "homepage": "http://www.videohubapp.com",
+  "name": "video-hub-app-sin",
+  "productName": "Video Hub App SIN",
+  "version": "3.3.0-sin.4",
+  "description": "Video Hub App SIN - an unsupported personal fork for browsing, searching, previewing, and managing videos",
+  "homepage": "https://github.com/sebiimaks/Video-Hub-App-SIN",
   "repository": {
     "type": "git",
-    "url": "https://github.com/whyboris/Video-Hub-App.git"
+    "url": "https://github.com/sebiimaks/Video-Hub-App-SIN.git"
   },
   "author": {
     "name": "Boris Yakubchik",
@@ -16,6 +16,11 @@
     {
       "name": "Cal Martin",
       "url": "https://github.com/cal2195"
+    },
+    {
+      "name": "sebiimaks",
+      "email": "github.sadness446@passmail.net",
+      "url": "https://github.com/sebiimaks"
     }
   ],
   "keywords": [

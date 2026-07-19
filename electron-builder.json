@@ -1,7 +1,7 @@
 {
-  "productName": "Video Hub App 3",
-  "appId": "com.videohubapp.videohubapp3",
-  "copyright": "Copyright © 2025 Boris Yakubchik",
+  "productName": "Video Hub App SIN",
+  "appId": "com.github.sebiimaks.videohubappsin",
+  "copyright": "Copyright © 2022 Boris Yakubchik",
   "directories": {
     "output": "release/"
   },
@@ -13,6 +13,10 @@
     "i18n/*.json"
   ],
   "extraResources": [
+    {
+      "from": "LICENSE",
+      "to": "LICENSE"
+    },
     {
       "from": "src/assets/icons/mac/touch-bar",
       "to": "assets"
@@ -40,6 +44,7 @@
   },
   "mac": {
     "category": "public.app-category.video",
+    "artifactName": "Video-Hub-App-SIN-v${version}-${arch}.${ext}",
     "target": {
       "target": "dmg",
       "arch": [
@@ -56,9 +61,27 @@
   },
   "linux": {
     "icon": "src/assets/icons/png",
+    "category": "AudioVideo",
+    "synopsis": "Unsupported personal fork of Video Hub App 3",
+    "description": "Browse, search, preview, and manage video collections. This is an unsupported personal version of the Video Hub App. All changes made utilising LLMs. Use at your own risk.",
+    "maintainer": "sebiimaks <github.sadness446@passmail.net>",
+    "vendor": "sebiimaks",
+    "desktop": {
+      "entry": {
+        "Name": "Video Hub App SIN",
+        "Comment": "Browse, search, preview, and manage video collections",
+        "Categories": "AudioVideo;Video;"
+      }
+    },
     "target": [
-      "AppImage"
+      "AppImage",
+      "deb"
     ]
+  },
+  "deb": {
+    "packageName": "video-hub-app-sin",
+    "packageCategory": "video",
+    "priority": "optional"
   },
   "nsis": {
     "oneClick": false,
@@ -66,7 +89,7 @@
   },
   "fileAssociations": {
     "ext": "vha2",
-    "name": "Video Hub App 3 file",
+    "name": "Video Hub App SIN file",
     "role": "Editor"
   }
 }
