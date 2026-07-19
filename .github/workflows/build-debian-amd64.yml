@@ -42,7 +42,7 @@ jobs:
       - name: Upload Debian AMD64 Package
         uses: actions/upload-artifact@v6
         with:
-          name: Video-Hub-App-SIN-${{ github.sha }}-debian-amd64
+          name: video-hub-app-sin-${{ github.sha }}-debian-amd64
           path: |
             release/*.deb
             release/SHA256SUMS-debian-amd64.txt

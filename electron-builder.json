@@ -44,7 +44,7 @@
   },
   "mac": {
     "category": "public.app-category.video",
-    "artifactName": "Video-Hub-App-SIN-v${version}-${arch}.${ext}",
+    "artifactName": "video-hub-app-sin-v${version}-${arch}.${ext}",
     "target": {
       "target": "dmg",
       "arch": [
