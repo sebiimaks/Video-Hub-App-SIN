@@ -5,7 +5,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 
@@ -213,7 +212,6 @@ import { YearPipe } from './pipes/year.pipe';
     VirtualScrollerModule
   ],
   providers: [
-    provideHttpClient(),
     AutoTagsSaveService,
     AutoTagsService,
     ElectronService,

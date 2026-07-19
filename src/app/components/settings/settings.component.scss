@@ -34,6 +34,10 @@
   margin-top: 0;
 }
 
+.zoom-buttons .zoom-reset-button {
+  font-size: 14px;
+}
+
 :host-context(.settings-modal-dark) {
   .button-description-text,
   .misc-settings {
@@ -45,5 +49,21 @@
     background-color: variables.$gray-90;
     border-color: variables.$gray-60;
     color: variables.$gray-05;
+  }
+
+  .credits-and-help {
+    color: variables.$gray-20;
+
+    &:hover {
+      color: variables.$light-blue;
+    }
+  }
+
+  .credits-attribution {
+    color: variables.$gray-30;
+  }
+
+  .zoom-buttons .zoom-icon-button app-icon {
+    fill: variables.$gray-05;
   }
 }

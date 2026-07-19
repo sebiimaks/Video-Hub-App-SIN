@@ -63,6 +63,11 @@
   margin-bottom: 20px;
 }
 
+.sources:not(.server-title) {
+  margin-bottom: 28px;
+  margin-top: 30px;
+}
+
 .hub-name {
   font-size: 20px;
   font-weight: normal;
@@ -97,7 +102,17 @@
 
 .input-sources-row {
   display: block;
+  min-height: 28px;
   position: relative;
+
+  & + & {
+    margin-top: 18px;
+  }
+}
+
+.input-sources + .edit-mode-container {
+  margin-bottom: 32px;
+  margin-top: 24px;
 }
 
 .watch-folder-note {

@@ -62,8 +62,26 @@ h3 {
 .credits-and-help {
   color: variables.$gray-60;
   cursor: pointer;
+  display: block;
   font-size: 14px;
   margin: 60px 70px 0;
+  text-align: center;
+  text-decoration: none;
+  transition: 200ms color;
+
+  &:hover {
+    color: variables.$pretty-blue;
+  }
+}
+
+.credits-and-help-secondary {
+  margin-top: 14px;
+}
+
+.credits-attribution {
+  color: variables.$gray-60;
+  font-size: 14px;
+  margin: 14px 70px 0;
   text-align: center;
 }
 
@@ -82,29 +100,6 @@ h3 {
     font-size: 12px;
   }
 
-  .version-message {
-    bottom: -25px;
-    font-size: 12px;
-    position: absolute;
-    right: 30px;
-  }
-
-  .you-have-latest {
-    color: variables.$pretty-blue;
-  }
-
-  .version-error {
-    color: variables.$gray-40;
-  }
-
-  .check-new-version {
-    cursor: pointer;
-    pointer-events: all;
-
-    &:hover {
-      color: variables.$pretty-blue;
-    }
-  }
 }
 
 .close-settings {

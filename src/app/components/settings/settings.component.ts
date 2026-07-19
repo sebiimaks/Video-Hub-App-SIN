@@ -25,12 +25,9 @@ import type { SettingsButtonsType } from '../../common/settings-buttons';
 export class SettingsComponent implements OnInit, OnChanges {
 
   readonly changeLanguage = output<string>();
-  readonly checkForNewVersion = output<any>();
   readonly chooseDefaultVideoPlayer = output<any>();
   readonly decreaseZoomLevel = output<any>();
-  readonly goDownloadNewVersion = output<any>();
   readonly increaseZoomLevel = output<any>();
-  readonly openOnlineHelp = output<any>();
   readonly resetZoomLevel = output<any>();
   readonly scrollSettingsToTop = output<void>();
   readonly toggleButton = output<string>();
@@ -38,7 +35,6 @@ export class SettingsComponent implements OnInit, OnChanges {
 
   @Input() appState;
   readonly demo = input();
-  readonly latestVersionAvailable = input();
   readonly settingTabToShow = input();
   @Input() settingsButtons: SettingsButtonsType;
   readonly versionNumber = input();
@@ -79,6 +75,11 @@ export class SettingsComponent implements OnInit, OnChanges {
     } else {
       this.modalService.openSnackbar(this.translate.instant('SETTINGS.extensionsInputError'));
     }
+  }
+
+  openExternalLink(event: MouseEvent, url: string): void {
+    event.preventDefault();
+    this.electronService.ipcRenderer.send('please-open-url', url);
   }
 
   private isAdditionalInputValid(input: string): boolean {

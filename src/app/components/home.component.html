@@ -248,12 +248,9 @@
 
     <app-settings
       (changeLanguage)="changeLanguage($any($event))"
-      (checkForNewVersion)="checkForNewVersion()"
       (chooseDefaultVideoPlayer)="chooseDefaultVideoPlayer()"
       (decreaseZoomLevel)="decreaseZoomLevel()"
-      (goDownloadNewVersion)="goDownloadNewVersion()"
       (increaseZoomLevel)="increaseZoomLevel()"
-      (openOnlineHelp)="openOnlineHelp()"
       (resetZoomLevel)="resetZoomLevel()"
       (scrollSettingsToTop)="scrollSettingsToTop()"
       (toggleButton)="toggleButton($any($event))"
@@ -261,7 +258,6 @@
 
       [appState]="appState"
       [demo]="demo"
-      [latestVersionAvailable]="latestVersionAvailable"
       [settingTabToShow]="settingTabToShow"
       [settingsButtons]="settingsButtons"
       [versionNumber]="versionNumber"
