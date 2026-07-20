@@ -44,9 +44,16 @@ export class ManualTagsService {
     this.forceTagSortPipeUpdate();
   }
 
-  removeTagBatch(tag: string) {
-    this.tagsFrequencyMap.set(tag, 0);
-    this.tagsList.splice(this.tagsList.indexOf(tag), 1);
+  removeTagGlobally(tag: string): void {
+    this.tagsFrequencyMap.delete(tag);
+
+    const tagIndex = this.tagsList.indexOf(tag);
+    if (tagIndex !== -1) {
+      this.tagsList.splice(tagIndex, 1);
+    }
+
+    delete this.tagColors[tag];
+    this.tagColorUpdatedSubject.next();
     this.forceTagSortPipeUpdate();
   }
 

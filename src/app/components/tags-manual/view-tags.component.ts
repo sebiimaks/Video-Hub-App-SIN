@@ -16,15 +16,20 @@ import type { Tag, TagEmit } from '../../../../interfaces/shared-interfaces';
 export class ViewTagsComponent {
 
   _tags: Tag[];
+  allowTagRemovalValue = false;
+  tagsAreStrings = false;
   toogleBatchModeValue: boolean = false;
 
   @Input()
   set tags(tags: Tag[] | string[]) {
     if (!tags || tags.length === 0) {
+      this.tagsAreStrings = false;
       this._tags = [];
     } else if ((typeof tags[0]) === 'string') {
+      this.tagsAreStrings = true;
       this._tags = this.stringToTagObject(<string[]>tags); // happens only in tag tray
     } else {
+      this.tagsAreStrings = false;
       this._tags = <Tag[]>tags; // happens in details & meta view
     }
   }
@@ -33,11 +38,13 @@ export class ViewTagsComponent {
   @Input()
   set tagsOnToggleBatch(toggleBatchMode: boolean) {
     this.toogleBatchModeValue = toggleBatchMode;
-    if (this._tags) {
-      this._tags.forEach((item) => {
-        item.removable = toggleBatchMode;
-      });
-    }
+    this.updateRemovability();
+  }
+
+  @Input()
+  set allowTagRemoval(allowTagRemoval: boolean) {
+    this.allowTagRemovalValue = allowTagRemoval;
+    this.updateRemovability();
   }
 
   readonly darkMode = input<boolean>();
@@ -78,12 +85,23 @@ export class ViewTagsComponent {
     tagList.forEach((tag) => {
       hackList.push({
         name: tag,
-        removable: this.toogleBatchModeValue,
+        removable: this.allowTagRemovalValue || this.toogleBatchModeValue,
         colour: this.tagService.getTagColor(tag),
       });
     });
 
     return hackList;
+  }
+
+  private updateRemovability(): void {
+    if (!this.tagsAreStrings || !this._tags) {
+      return;
+    }
+
+    const removable = this.allowTagRemovalValue || this.toogleBatchModeValue;
+    this._tags.forEach((item) => {
+      item.removable = removable;
+    });
   }
 
   /**

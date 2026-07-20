@@ -84,6 +84,7 @@
     [displayFrequency]="manualTagShowFrequency"
     [draggable]="true"
     [enableColorPicker]="true"
+    [allowTagRemoval]="true"
     [tagsOnToggleBatch]="batchTaggingMode()"
     [tags]="manualTagsService.tagsList | manualTagSortPipe : manualTagFilterString
                                                            : appState().sortTagsByFrequency

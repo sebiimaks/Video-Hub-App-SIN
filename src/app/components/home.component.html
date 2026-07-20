@@ -1294,6 +1294,7 @@
     (handleTagWordClicked)="handleTagWordClicked($event.tag.name, $event.event)"
     (selectAll)="selectAllVisible()"
     (selectNone)="unselectAllTags()"
+    (tagRemovedGlobally)="ifShowDetailsViewRefreshTags()"
     (toggleBatchTaggingMode)="toggleBatchTaggingMode()"
     [appState]="appState"
     [batchTaggingMode]="batchTaggingMode"

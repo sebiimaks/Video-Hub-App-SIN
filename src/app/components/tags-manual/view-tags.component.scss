@@ -23,7 +23,7 @@
 
   .remove-tag {
     box-sizing: border-box;
-    cursor: not-allowed;
+    cursor: pointer;
     fill: red;
     height: 14px;
     left: 1px;
@@ -35,6 +35,10 @@
     transition-property: transform;
     width: 14px;
     z-index: 1;
+  }
+
+  .remove-tag-dark {
+    fill: variables.$gray-05;
   }
 
   &:hover {

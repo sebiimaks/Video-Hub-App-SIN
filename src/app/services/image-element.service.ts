@@ -96,6 +96,32 @@ export class ImageElementService {
   }
 
   /**
+   * Remove a manual tag from every video in the current catalogue.
+   * Returns the number of videos that were changed.
+   */
+  removeTagFromAll(tag: string): number {
+    let affectedVideoCount = 0;
+
+    this.imageElements.forEach((element: ImageElement) => {
+      if (!element.tags?.includes(tag)) {
+        return;
+      }
+
+      element.tags = element.tags.filter((existingTag) => existingTag !== tag);
+      affectedVideoCount++;
+    });
+
+    if (affectedVideoCount > 0) {
+      this.imageElements = this.imageElements.slice();
+    }
+
+    // Also persists the removal of any catalogue-level metadata for this tag.
+    this.finalArrayNeedsSaving = true;
+
+    return affectedVideoCount;
+  }
+
+  /**
    * Toggle heart
    */
   toggleHeart(index: number): void {
