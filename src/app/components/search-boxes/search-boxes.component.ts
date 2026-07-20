@@ -37,6 +37,27 @@ export class SearchBoxesComponent {
   constructor() { }
 
   /**
+   * Choose readable text for the configured filter-chip background.
+   */
+  getContrastColor(hexColor: string): string {
+    if (!hexColor) {
+      return 'black';
+    }
+
+    const hex = hexColor.replace('#', '');
+    if (hex.length !== 6 || !/^[0-9A-Fa-f]{6}$/.test(hex)) {
+      return 'black';
+    }
+
+    const red = parseInt(hex.substring(0, 2), 16);
+    const green = parseInt(hex.substring(2, 4), 16);
+    const blue = parseInt(hex.substring(4, 6), 16);
+    const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+
+    return luminance > 0.5 ? 'black' : 'white';
+  }
+
+  /**
    * If is tag search & user wrote text & type ahead is recommended, insert full typeahead
    * @param event
    * @param isTagSearch

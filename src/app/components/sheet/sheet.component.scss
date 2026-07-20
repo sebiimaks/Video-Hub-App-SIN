@@ -44,6 +44,26 @@
 
 .sheet-modal-dark-mode {
   background-color: variables.$gray-80;
+
+  .details-zoom-buttons {
+    .defaultSettingsButton {
+      background: variables.$gray-70;
+      border-color: variables.$gray-50;
+      color: variables.$white;
+
+      &:hover {
+        background-color: variables.$gray-60 !important;
+      }
+    }
+
+    app-icon {
+      fill: variables.$white;
+    }
+
+    .reset-button {
+      font-weight: 600;
+    }
+  }
 }
 
 .meta-container {
@@ -106,14 +126,45 @@
 }
 
 .reset-button {
-  margin: 0 10px;
+  margin: 0;
   max-width: initial;
   padding: 0 10px;
-  transform: translate(0, -3px);
+  transform: none;
 }
 
 .details-zoom-buttons {
+  align-items: center;
+  display: flex;
+  gap: 10px;
   position: absolute;
   right: 40px;
   top: 40px;
+
+  button {
+    align-items: center;
+    border-radius: 8px !important;
+    display: inline-flex;
+    font-size: 11px;
+    justify-content: center;
+    max-height: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    min-width: 24px;
+  }
+
+  button:first-child,
+  button:last-child {
+    border-radius: 50% !important;
+  }
+
+  .reset-button {
+    max-width: initial;
+  }
+
+  app-icon {
+    display: block;
+    height: 15px;
+    line-height: 0;
+    width: 15px;
+  }
 }

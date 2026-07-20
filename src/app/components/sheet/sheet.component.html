@@ -29,13 +29,15 @@
     <button
       (click)="decreaseZoomLevel()"
       class="defaultSettingsButton"
+      [ngClass]="{ 'defaultSettingsButtonDark': darkMode() }"
     >
-      <app-icon [icon]="'icon-minus'" />
+      <app-icon [icon]="'icon-minus'" [size]="15" />
     </button>
 
     <button
       (click)="resetZoomLevel()"
       class="defaultSettingsButton reset-button"
+      [ngClass]="{ 'defaultSettingsButtonDark': darkMode() }"
     >
       <span>{{ 'SETTINGS.resetZoom' | translate }}</span>
     </button>
@@ -43,8 +45,9 @@
     <button
       (click)="increaseZoomLevel()"
       class="defaultSettingsButton"
+      [ngClass]="{ 'defaultSettingsButtonDark': darkMode() }"
     >
-      <app-icon [icon]="'icon-plus'" />
+      <app-icon [icon]="'icon-plus'" [size]="15" />
     </button>
 
   </div>

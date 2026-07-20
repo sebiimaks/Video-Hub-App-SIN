@@ -47,7 +47,10 @@
 
           <span
             (click)="removeThisFilter.emit({ item: i, origin: j })"
-            [ngStyle]="{ background: filter.color }"
+            [ngStyle]="{
+              background: filter.color,
+              color: getContrastColor(filter.color)
+            }"
             class="search-or-tag-general search-word"
           >
             {{ string }}

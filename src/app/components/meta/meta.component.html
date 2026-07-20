@@ -1,5 +1,6 @@
 <div
   class="meta-container"
+  [ngClass]="{ 'meta-container-with-side-notes': showVideoNotes() }"
   [ngStyle]="{
     'min-height': imgHeight() + 'px',
     'width': maxWidth() + 'px'
@@ -168,6 +169,7 @@
 @if (showVideoNotes()) {
   <textarea
     #videoNotes
+    class="video-notes"
     [ngClass]="{ 'notes-dark-mode': darkMode() }"
     (blur)="saveVideoNotes($event)"
     placeholder="{{ 'TAGS.notes' | translate }}"

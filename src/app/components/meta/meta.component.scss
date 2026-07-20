@@ -140,3 +140,24 @@ textarea {
   border-left: 1px solid variables.$gray-70;
   color: white;
 }
+
+:host-context(.sheet-modal) {
+  .meta-container-with-side-notes {
+    padding-right: calc(38% + 24px);
+    position: relative;
+    width: 100% !important;
+
+    .meta-title {
+      max-width: 100% !important;
+    }
+
+    .video-notes {
+      height: 95px;
+      margin: 0;
+      position: absolute;
+      right: 0;
+      top: 55px;
+      width: 38%;
+    }
+  }
+}
