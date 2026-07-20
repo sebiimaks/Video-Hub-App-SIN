@@ -2022,6 +2022,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.catalogueEditorSaveStatus = '';
   }
 
+  closeCatalogueEditor(): void {
+    this.catalogueEditorOpen = false;
+
+    // The gallery uses pure pipes, so provide a new array reference after editor mutations.
+    this.imageElementService.imageElements = this.imageElementService.imageElements.slice();
+    this.ifShowDetailsViewRefreshTags();
+
+    // Recreate the bottom Details tray when its selected item was edited.
+    if (this.currentClickedItem) {
+      this.currentClickedItemName = this.currentClickedItem.cleanName;
+      this.updateCurrentClickedItem(this.currentClickedItem);
+    }
+
+    this.cd.detectChanges();
+    setTimeout(() => {
+      this.virtualScroller()?.refresh();
+    }, 0);
+  }
+
   handleCatalogueEntriesChanged(): void {
     const activeImages = this.imageElementService.imageElements.filter((element: ImageElement) => !element.deleted);
 

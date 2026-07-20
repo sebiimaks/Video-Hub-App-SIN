@@ -79,6 +79,30 @@
   padding: 10px 12px;
 }
 
+.catalogue-batch-toolbar {
+  align-items: center;
+  background: variables.$gray-05;
+  border-bottom: 1px solid variables.$gray-30;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  min-height: 44px;
+  padding: 7px 12px;
+}
+
+.catalogue-batch-label {
+  color: variables.$gray-70;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.catalogue-batch-status {
+  color: variables.$gray-60;
+  font-size: 11px;
+  grid-column: 2 / -1;
+}
+
 .catalogue-search,
 .catalogue-editor-toolbar select,
 .catalogue-row input,
@@ -115,6 +139,7 @@
 }
 
 .catalogue-save,
+.catalogue-batch-apply,
 .catalogue-delete,
 .catalogue-restore {
   border: 1px solid variables.$gray-40;
@@ -123,6 +148,19 @@
   font-size: 12px;
   min-height: 28px;
   padding: 5px 10px;
+}
+
+.catalogue-batch-apply {
+  background: variables.$pretty-blue;
+  border-color: variables.$dark-blue;
+  color: variables.$white;
+  white-space: nowrap;
+
+  &:disabled {
+    background: variables.$gray-40;
+    border-color: variables.$gray-50;
+    cursor: default;
+  }
 }
 
 .catalogue-save {
@@ -135,6 +173,62 @@
     border-color: variables.$gray-50;
     cursor: default;
   }
+}
+
+.catalogue-tag-input {
+  background: variables.$white;
+  border: 1px solid variables.$gray-40;
+  border-radius: 4px;
+  box-sizing: border-box;
+  height: 26px;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+
+  &:focus-within {
+    border-color: variables.$pretty-blue;
+    box-shadow: 0 0 0 1px rgba(114, 154, 255, 0.25);
+  }
+
+  input {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: variables.$gray-90;
+    font-family: inherit;
+    font-size: 12px;
+    height: 24px;
+    line-height: 16px;
+    min-width: 0;
+    outline: none;
+    padding: 4px 6px;
+    position: relative;
+    user-select: text;
+    width: 100%;
+    z-index: 2;
+
+    &:focus {
+      border: 0;
+      box-shadow: none;
+    }
+  }
+}
+
+.catalogue-tag-typeahead {
+  color: variables.$pretty-blue;
+  font-size: 12px;
+  left: 6px;
+  line-height: 24px;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 6px;
+  text-overflow: clip;
+  top: 0;
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .catalogue-editor-status {
@@ -221,6 +315,10 @@
   height: 26px;
 }
 
+.catalogue-row .catalogue-tag-input input {
+  height: 24px;
+}
+
 .notes-field {
   grid-column: span 2;
 
@@ -281,6 +379,7 @@
 
   .catalogue-editor-header,
   .catalogue-editor-toolbar,
+  .catalogue-batch-toolbar,
   .catalogue-column-header {
     background: variables.$gray-80;
     border-color: variables.$black;
@@ -295,6 +394,8 @@
   .catalogue-row label,
   .catalogue-readonly,
   .catalogue-column-header,
+  .catalogue-batch-label,
+  .catalogue-batch-status,
   .catalogue-toggle {
     color: variables.$gray-30;
   }
@@ -318,11 +419,31 @@
     border-color: variables.$gray-60;
     color: variables.$gray-10;
   }
+
+  .catalogue-tag-input {
+    background: variables.$gray-90;
+    border-color: variables.$gray-60;
+
+    input {
+      background: transparent;
+      border: 0;
+      color: variables.$gray-10;
+    }
+  }
 }
 
 @media (max-width: 980px) {
   .catalogue-editor-toolbar {
     grid-template-columns: minmax(180px, 1fr) 125px;
+  }
+
+  .catalogue-batch-toolbar {
+    grid-template-columns: minmax(180px, 1fr) auto;
+  }
+
+  .catalogue-batch-label,
+  .catalogue-batch-status {
+    grid-column: 1 / -1;
   }
 
   .catalogue-row,

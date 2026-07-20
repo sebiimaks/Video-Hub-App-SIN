@@ -62,6 +62,44 @@
     </button>
   </div>
 
+  <div class="catalogue-batch-toolbar">
+    <span class="catalogue-batch-label">Tag Displayed Results</span>
+
+    <div class="catalogue-tag-input catalogue-batch-tag-input">
+      <span
+        *ngIf="batchTagTypeahead"
+        aria-hidden="true"
+        class="catalogue-tag-typeahead"
+      >{{ batchAutocompleteDraft }}</span>
+
+      <input
+        [ngModel]="batchTagDraft"
+        (ngModelChange)="updateBatchTagDraft($event)"
+        (keydown.Tab)="acceptBatchTagTypeahead($event)"
+        (keydown.enter)="applyBatchTags()"
+        placeholder="Tags, separated by commas"
+        type="text"
+      >
+    </div>
+
+    <button
+      class="catalogue-batch-apply"
+      (click)="applyBatchTags()"
+      [disabled]="!canApplyBatchTags"
+      type="button"
+    >
+      Add Tags to {{ filteredEntries.length | number }}
+      {{ filteredEntries.length === 1 ? 'Result' : 'Results' }}
+    </button>
+
+    <span
+      *ngIf="batchTagStatus"
+      class="catalogue-batch-status"
+    >
+      {{ batchTagStatus }}
+    </span>
+  </div>
+
   <div class="catalogue-editor-status">
     <span>{{ filteredEntries.length | number }} shown</span>
     <span>{{ activeCount | number }} active</span>
@@ -122,13 +160,23 @@
 
         <label>
           <span>Tags</span>
-          <input
-            [ngModel]="tagDraftFor(item)"
-            (ngModelChange)="updateTagDraft(item, $event)"
-            (blur)="commitTags(item)"
-            (keydown.enter)="commitTags(item)"
-            type="text"
-          >
+          <div class="catalogue-tag-input">
+            <span
+              *ngIf="tagTypeaheadFor(item)"
+              aria-hidden="true"
+              class="catalogue-tag-typeahead"
+            >{{ tagAutocompleteDraftFor(item) }}</span>
+
+            <input
+              [ngModel]="tagDraftFor(item)"
+              (ngModelChange)="updateTagDraft(item, $event)"
+              (blur)="commitTags(item)"
+              (keydown.Tab)="acceptTagTypeahead(item, $event)"
+              (keydown.enter)="commitTags(item)"
+              placeholder="Separate tags with commas"
+              type="text"
+            >
+          </div>
         </label>
 
         <label>

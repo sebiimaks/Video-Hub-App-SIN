@@ -18,7 +18,7 @@
 
 @if (catalogueEditorOpen) {
   <app-catalogue-editor
-    (closeEditor)="catalogueEditorOpen = false"
+    (closeEditor)="closeCatalogueEditor()"
     (entriesChanged)="handleCatalogueEntriesChanged()"
     (saveRequested)="saveCurrentVhaFile()"
 

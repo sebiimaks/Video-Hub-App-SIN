@@ -32,6 +32,9 @@ export class CatalogueEditorComponent implements OnChanges {
 
   field: CatalogueSearchField = 'all';
   filteredEntries: ImageElement[] = [];
+  batchTagDraft = '';
+  batchTagStatus = '';
+  batchTagTypeahead = '';
   query = '';
   showDeleted = false;
 
@@ -45,6 +48,7 @@ export class CatalogueEditorComponent implements OnChanges {
   ];
 
   private tagDrafts: { [index: number]: string } = {};
+  private tagTypeaheads: { [index: number]: string } = {};
 
   constructor(
     public imageElementService: ImageElementService,
@@ -61,6 +65,14 @@ export class CatalogueEditorComponent implements OnChanges {
     return this.images.filter((element: ImageElement) => !element.deleted).length;
   }
 
+  get batchAutocompleteDraft(): string {
+    return this.getAutocompleteDraft(this.batchTagDraft, this.batchTagTypeahead);
+  }
+
+  get canApplyBatchTags(): boolean {
+    return this.filteredEntries.length > 0 && this.parseTags(this.batchTagDraft).length > 0;
+  }
+
   get deletedCount(): number {
     return this.images.filter((element: ImageElement) => element.deleted).length;
   }
@@ -72,6 +84,83 @@ export class CatalogueEditorComponent implements OnChanges {
   close(): void {
     this.commitAllTagDrafts();
     this.closeEditor.emit();
+  }
+
+  acceptBatchTagTypeahead(event: KeyboardEvent): void {
+    if (!this.batchTagTypeahead) {
+      return;
+    }
+
+    event.preventDefault();
+    this.batchTagDraft = this.completeTagDraft(this.batchTagDraft, this.batchTagTypeahead);
+    this.batchTagTypeahead = '';
+  }
+
+  acceptTagTypeahead(item: ImageElement, event: KeyboardEvent): void {
+    const typeahead = this.tagTypeaheads[item.index];
+
+    if (!typeahead) {
+      return;
+    }
+
+    event.preventDefault();
+    this.tagDrafts[item.index] = this.completeTagDraft(this.tagDraftFor(item), typeahead);
+    this.tagTypeaheads[item.index] = '';
+  }
+
+  applyBatchTags(): void {
+    const targetEntries = this.filteredEntries.slice();
+
+    if (!targetEntries.length || !this.batchTagDraft.trim()) {
+      return;
+    }
+
+    // Commit open row edits first so a later blur or save cannot overwrite batch additions.
+    this.commitAllTagDrafts();
+
+    const tagsToAdd = this.parseTags(this.batchTagDraft);
+    if (!tagsToAdd.length) {
+      return;
+    }
+
+    let updatedEntryCount = 0;
+
+    targetEntries.forEach((item: ImageElement) => {
+      const currentTags = item.tags || [];
+      const nextTags = currentTags.slice();
+
+      tagsToAdd.forEach((tag: string) => {
+        const tagAlreadyPresent = nextTags.some(
+          (existingTag: string) => existingTag.toLowerCase() === tag.toLowerCase()
+        );
+
+        if (!tagAlreadyPresent) {
+          nextTags.push(tag);
+        }
+      });
+
+      if (this.tagsMatch(currentTags, nextTags)) {
+        return;
+      }
+
+      item.tags = nextTags;
+      this.tagDrafts[item.index] = this.tagsToString(item);
+      this.tagTypeaheads[item.index] = '';
+      updatedEntryCount++;
+    });
+
+    this.batchTagDraft = '';
+    this.batchTagTypeahead = '';
+
+    if (updatedEntryCount === 0) {
+      this.batchTagStatus = 'All displayed entries already have these tags.';
+      return;
+    }
+
+    const entryLabel = updatedEntryCount === 1 ? 'entry' : 'entries';
+    this.batchTagStatus = `Updated ${updatedEntryCount} displayed ${entryLabel}.`;
+    this.markDirty(true);
+    this.refreshFilteredEntries();
   }
 
   deleteEntry(item: ImageElement): void {
@@ -114,6 +203,17 @@ export class CatalogueEditorComponent implements OnChanges {
     }
 
     return this.tagDrafts[item.index];
+  }
+
+  tagAutocompleteDraftFor(item: ImageElement): string {
+    return this.getAutocompleteDraft(
+      this.tagDraftFor(item),
+      this.tagTypeaheads[item.index] || ''
+    );
+  }
+
+  tagTypeaheadFor(item: ImageElement): string {
+    return this.tagTypeaheads[item.index] || '';
   }
 
   trackByImageIndex(index: number, item: ImageElement): number {
@@ -178,6 +278,13 @@ export class CatalogueEditorComponent implements OnChanges {
 
   updateTagDraft(item: ImageElement, value: string): void {
     this.tagDrafts[item.index] = value;
+    this.tagTypeaheads[item.index] = this.getTagTypeahead(value);
+  }
+
+  updateBatchTagDraft(value: string): void {
+    this.batchTagDraft = value;
+    this.batchTagTypeahead = this.getTagTypeahead(value);
+    this.batchTagStatus = '';
   }
 
   updateYear(item: ImageElement, value: string | number): void {
@@ -212,6 +319,9 @@ export class CatalogueEditorComponent implements OnChanges {
     const currentTags = item.tags || [];
     const nextTags = this.parseTags(this.tagDrafts[item.index] || '');
 
+    this.tagDrafts[item.index] = nextTags.join(', ');
+    this.tagTypeaheads[item.index] = '';
+
     if (this.tagsMatch(currentTags, nextTags)) {
       return;
     }
@@ -222,9 +332,30 @@ export class CatalogueEditorComponent implements OnChanges {
       delete item.tags;
     }
 
-    this.tagDrafts[item.index] = this.tagsToString(item);
     this.markDirty(true);
     this.refreshFilteredEntries();
+  }
+
+  private completeTagDraft(tagText: string, typeahead: string): string {
+    const lastCommaIndex = tagText.lastIndexOf(',');
+    const completedDraft = lastCommaIndex === -1
+      ? typeahead
+      : `${tagText.slice(0, lastCommaIndex)}, ${typeahead}`;
+
+    return this.parseTags(completedDraft).join(', ');
+  }
+
+  private getActiveTagFragment(tagText: string): string {
+    return tagText.slice(tagText.lastIndexOf(',') + 1).trim();
+  }
+
+  private getAutocompleteDraft(tagText: string, typeahead: string): string {
+    if (!typeahead) {
+      return '';
+    }
+
+    const activeFragment = this.getActiveTagFragment(tagText);
+    return tagText + typeahead.slice(activeFragment.length);
   }
 
   private getSearchText(item: ImageElement): string {
@@ -269,10 +400,16 @@ export class CatalogueEditorComponent implements OnChanges {
 
   private parseTags(tagText: string): string[] {
     const seen = new Set<string>();
+    const knownTags = new Map<string, string>();
+
+    this.manualTagsService.tagsList.forEach((tag: string) => {
+      knownTags.set(tag.toLowerCase(), tag);
+    });
 
     return tagText
       .split(',')
       .map((tag: string) => tag.trim())
+      .map((tag: string) => knownTags.get(tag.toLowerCase()) || tag)
       .filter((tag: string) => {
         const key = tag.toLowerCase();
 
@@ -283,6 +420,17 @@ export class CatalogueEditorComponent implements OnChanges {
         seen.add(key);
         return true;
       });
+  }
+
+  private getTagTypeahead(tagText: string): string {
+    const activeFragment = this.getActiveTagFragment(tagText);
+
+    if (!activeFragment) {
+      return '';
+    }
+
+    const typeahead = this.manualTagsService.getTypeahead(activeFragment);
+    return typeahead === activeFragment ? '' : typeahead;
   }
 
   private tagsMatch(left: string[], right: string[]): boolean {
