@@ -799,6 +799,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.vhaFileHistory = (settingsObject.vhaFileHistory || []);
       this.restoreSettingsFromBefore(settingsObject);
       this.setOrRestoreLanguage(settingsObject.appState.language, locale);
+      if (settingsObject.wizardOptions) {
+        this.wizard = settingsObject.wizardOptions;
+      }
       if (this.appState.currentZoomLevel !== 1) {
         this.electronService.webFrame.setZoomFactor(this.appState.currentZoomLevel);
         setTimeout(() => {
@@ -809,8 +812,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       if (settingsObject.appState.currentVhaFile) {
         this.loadThisVhaFile(settingsObject.appState.currentVhaFile);
       } else {
-        this.wizard.showWizard = true;
-        this.flickerReduceOverlay = false;
+        this.showOpeningWizard(false);
       }
       if (settingsObject.shortcuts) {
         this.shortcutService.initializeFromSaved(settingsObject.shortcuts);
@@ -818,20 +820,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
       if (settingsObject.remoteSettings) {
         this.remoteSettings = settingsObject.remoteSettings;
       }
-      if (settingsObject.wizardOptions) {
-        this.wizard = settingsObject.wizardOptions;
-      }
     });
 
-    this.electronService.ipcRenderer.on('please-open-wizard', (event, firstRun) => {
+    this.electronService.ipcRenderer.on('please-open-wizard', (event, firstRun, failedPath?: string) => {
       // Correlated with the first time ever starting the app !!!
       // Can happen when no settings present
       // Can happen when trying to open a .vha2 file that no longer exists
-      if (firstRun) {
-        this.firstRunLogic();
-      }
-      this.wizard.showWizard = true;
-      this.flickerReduceOverlay = false;
+      this.showOpeningWizard(firstRun, failedPath);
     });
 
     // This happens when the computer is about to SHUT DOWN
@@ -866,6 +861,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
     });
 
     this.electronService.ipcRenderer.on('current-vha-file-save-failed', (event, errorMessage: string) => {
+      this.catalogueEditorSaving = false;
+      this.catalogueEditorSaveStatus = errorMessage ? 'Save failed: ' + errorMessage : 'Save failed';
+      this.cd.detectChanges();
+    });
+
+    this.electronService.ipcRenderer.on('close-window-save-failed', (event, errorMessage: string) => {
+      this.isClosing = false;
       this.catalogueEditorSaving = false;
       this.catalogueEditorSaveStatus = errorMessage ? 'Save failed: ' + errorMessage : 'Save failed';
       this.cd.detectChanges();
@@ -1076,7 +1078,33 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.electronService.ipcRenderer.send('system-open-file-through-modal');
   }
 
+  private showOpeningWizard(firstRun: boolean, failedPath?: string): void {
+    this.zone.run(() => {
+      if (firstRun) {
+        this.firstRunLogic();
+      }
+
+      this.importStage = 'done';
+      this.catalogueEditorOpen = false;
+      this.settingsModalOpen = false;
+      this.flickerReduceOverlay = false;
+      if (
+        failedPath
+        && this.appState.currentVhaFile === failedPath
+        && this.imageElementService.imageElements.length === 0
+      ) {
+        this.appState.currentVhaFile = '';
+      }
+      this.wizard.showWizard = true;
+      this.cd.detectChanges();
+    });
+  }
+
   public saveCurrentVhaFile(): void {
+    if (this.catalogueEditorSaving) {
+      return;
+    }
+
     const finalObjectToSave = this.getFinalObjectForSaving();
 
     if (finalObjectToSave === null) {
@@ -2023,6 +2051,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   closeCatalogueEditor(): void {
+    if (this.catalogueEditorSaving) {
+      return;
+    }
+
     this.catalogueEditorOpen = false;
 
     // The gallery uses pure pipes, so provide a new array reference after editor mutations.

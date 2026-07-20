@@ -46,7 +46,8 @@
     "ng": "ng",
     "lint": "ng lint",
     "ng:serve": "ng serve",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "test:persistence": "ts-node --project tsconfig.persistence-tests.json node/vha-file-persistence.test.ts"
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "2.1.2",

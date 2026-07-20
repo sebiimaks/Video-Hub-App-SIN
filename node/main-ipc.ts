@@ -11,6 +11,7 @@ import { SettingsObject } from '../interfaces/settings-object.interface';
 import { createDotPlsFile, writeVhaFileToDisk } from './main-support';
 import { replaceThumbnailWithNewImage } from './main-extract';
 import { closeWatcher, startWatcher, extractAnyMissingThumbs, removeThumbnailsNotInHub } from './main-extract-async';
+import { writeJsonAtomically } from './vha-file-persistence';
 
 /**
  * Set up the listeners
@@ -375,38 +376,62 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * Close the window / quit / exit the app
    */
   ipc.on('close-window', (event, settingsToSave: SettingsObject, finalObjectToSave: FinalObject) => {
-    // convert shortcuts map to object
-    settingsToSave.shortcuts = <any>Object.fromEntries(settingsToSave.shortcuts);
+    const reportCloseFailure = (error: unknown, message: string) => {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      event.sender.send('close-window-save-failed', errorMessage);
+      const activeWindow = BrowserWindow.getFocusedWindow() || GLOBALS.winRef;
+      const dialogOptions = {
+        buttons: ['OK'],
+        detail: errorMessage,
+        message,
+        title: 'Unable to Close Safely',
+        type: 'error' as const,
+      };
+      if (activeWindow && !activeWindow.isDestroyed()) {
+        dialog.showMessageBox(activeWindow, dialogOptions);
+      } else {
+        dialog.showMessageBox(dialogOptions);
+      }
+    };
 
-    const json = JSON.stringify(settingsToSave);
+    const closeWindow = () => {
+      try {
+        const activeWindow = BrowserWindow.getFocusedWindow() || GLOBALS.winRef;
+        GLOBALS.readyToQuit = true;
+        if (activeWindow && !activeWindow.isDestroyed()) {
+          activeWindow.close();
+        }
+      } catch {
+        // The window may already be closed while the app is quitting.
+      }
+    };
 
+    let json: string;
     try {
-      fs.statSync(path.join(pathToAppData, 'video-hub-app-2'));
-    } catch (e) {
-      fs.mkdirSync(path.join(pathToAppData, 'video-hub-app-2'));
+      // convert shortcuts map to object
+      settingsToSave.shortcuts = <any>Object.fromEntries(settingsToSave.shortcuts);
+      json = JSON.stringify(settingsToSave);
+      fs.mkdirSync(GLOBALS.settingsPath, { recursive: true });
+    } catch (error) {
+      reportCloseFailure(error, 'The application settings could not be prepared for saving. The app will remain open.');
+      return;
     }
 
-    // TODO -- catch bug if user closes before selecting the output folder ?!??
-    fs.writeFile(path.join(GLOBALS.settingsPath, 'settings.json'), json, 'utf8', () => {
-      if (finalObjectToSave !== null) {
-
-        writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, () => {
-          try {
-            GLOBALS.readyToQuit = true;
-            BrowserWindow.getFocusedWindow().close();
-          } catch {
-            // The window may already be closed while the app is quitting.
-          }
-        });
-
-      } else {
-        try {
-          GLOBALS.readyToQuit = true;
-          BrowserWindow.getFocusedWindow().close();
-        } catch {
-          // The window may already be closed while the app is quitting.
-        }
+    writeJsonAtomically(path.join(GLOBALS.settingsPath, 'settings.json'), json).then(() => {
+      if (finalObjectToSave === null) {
+        closeWindow();
+        return;
       }
+
+      writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, (error: Error) => {
+        if (error) {
+          reportCloseFailure(error, 'The current catalogue could not be saved. The app will remain open to protect your changes.');
+          return;
+        }
+        closeWindow();
+      });
+    }).catch((error: Error) => {
+      reportCloseFailure(error, 'The application settings could not be saved. The app will remain open.');
     });
   });
 

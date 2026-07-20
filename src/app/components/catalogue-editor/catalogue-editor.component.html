@@ -6,6 +6,8 @@
 <section
   class="catalogue-editor"
   [ngClass]="{ 'catalogue-editor-dark': darkMode }"
+  [attr.aria-busy]="isSaving"
+  [attr.inert]="isSaving ? '' : null"
 >
   <header class="catalogue-editor-header">
     <div class="catalogue-editor-title">
@@ -16,6 +18,7 @@
     <button
       class="catalogue-icon-button"
       (click)="close()"
+      [disabled]="isSaving"
       title="Close"
     >
       <app-icon class="close-modal-icon" [icon]="'icon-close'"></app-icon>

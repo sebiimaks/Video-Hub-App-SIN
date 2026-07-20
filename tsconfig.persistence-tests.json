@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "commonjs",
+    "noEmit": true,
+    "target": "es2022"
+  },
+  "include": [
+    "interfaces/final-object.interface.ts",
+    "node/vha-file-persistence.ts",
+    "node/vha-file-persistence.test.ts"
+  ]
+}

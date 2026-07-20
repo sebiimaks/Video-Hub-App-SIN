@@ -21,6 +21,7 @@ import type { Stats } from 'fs';
 import type { FinalObject, ImageElement, ScreenshotSettings, InputSources, ResolutionString } from '../interfaces/final-object.interface';
 import { NewImageElement } from '../interfaces/final-object.interface';
 import { startFileSystemWatching, resetWatchers } from './main-extract-async';
+import { writeVhaJsonAtomically } from './vha-file-persistence';
 
 interface ResolutionMeta {
   label: ResolutionString;
@@ -220,36 +221,31 @@ function markDuplicatesAsDeleted(imagesArray: ImageElement[]): ImageElement[] {
  * @param done          -- function to execute when done writing the file
  */
 export function writeVhaFileToDisk(finalObject: FinalObject, pathToTheFile: string, done): void {
-
-  finalObject.images = finalObject.images.filter(element => !element.deleted);
-
-  finalObject.images = stripOutTemporaryFields(finalObject.images);
-
-  // remove any videos that have no reference (unsure how this could happen, but just in case)
-  const allKeys: string[] = Object.keys(finalObject.inputDirs);
-  finalObject.images = finalObject.images.filter(element => {
-    return allKeys.includes(element.inputSource.toString());
-  });
-
-  finalObject.images = alphabetizeFinalArray(finalObject.images); // needed for `default` sort to show proper order
-  finalObject.images = markDuplicatesAsDeleted(finalObject.images); // expects `alphabetizeFinalArray` to run first
-  finalObject.images = finalObject.images.filter(element => !element.deleted); // remove any marked in above method
-
-  finalObject.numOfFolders = countFoldersInFinalArray(finalObject.images);
-
-  const json = JSON.stringify(finalObject);
-
-  // backup current file
   try {
-    fs.renameSync(pathToTheFile, pathToTheFile + '.bak');
-  } catch (err) {
-    console.log('Error backup up file! Moving on...');
-    console.log(err);
-  }
+    finalObject.images = finalObject.images.filter(element => !element.deleted);
 
-  // write the file
-  fs.writeFile(pathToTheFile, json, 'utf8', done);
-  // TODO ? CATCH ERRORS ?
+    finalObject.images = stripOutTemporaryFields(finalObject.images);
+
+    // remove any videos that have no reference (unsure how this could happen, but just in case)
+    const allKeys: string[] = Object.keys(finalObject.inputDirs);
+    finalObject.images = finalObject.images.filter(element => {
+      return allKeys.includes(element.inputSource.toString());
+    });
+
+    finalObject.images = alphabetizeFinalArray(finalObject.images); // needed for `default` sort to show proper order
+    finalObject.images = markDuplicatesAsDeleted(finalObject.images); // expects `alphabetizeFinalArray` to run first
+    finalObject.images = finalObject.images.filter(element => !element.deleted); // remove any marked in above method
+
+    finalObject.numOfFolders = countFoldersInFinalArray(finalObject.images);
+
+    const json = JSON.stringify(finalObject);
+    writeVhaJsonAtomically(pathToTheFile, json).then(
+      () => done(),
+      (error: Error) => done(error),
+    );
+  } catch (error) {
+    done(error);
+  }
 }
 
 /**

@@ -82,6 +82,10 @@ export class CatalogueEditorComponent implements OnChanges {
   }
 
   close(): void {
+    if (this.isSaving) {
+      return;
+    }
+
     this.commitAllTagDrafts();
     this.closeEditor.emit();
   }

@@ -16,6 +16,7 @@ import { createTouchBar } from './node/main-touch-bar';
 import { setUpIpcForServer } from './node/server';
 import { setUpIpcMessages } from './node/main-ipc';
 import { sendFinalObjectToAngular, setUpDirectoryWatchers, upgradeToVersion3, writeVhaFileToDisk, parseAdditionalExtensions } from './node/main-support';
+import { readVhaFileWithBackup, recoverVhaFileFromBackup } from './node/vha-file-persistence';
 
 // Interfaces
 import { FinalObject } from './interfaces/final-object.interface';
@@ -288,10 +289,11 @@ function getAngularToShutDown(): void {
 }
 
 /**
- * Load the .vha2 file and send it to app
+ * Load the .vha2 file and send it to app.
+ * Invalid catalogues are handled here so a failed JSON parse cannot crash Electron.
  * @param pathToVhaFile full path to the .vha2 file
  */
-function openThisDamnFile(pathToVhaFile: string): void {
+async function openThisDamnFile(pathToVhaFile: string): Promise<void> {
 
   resetAllQueues();
 
@@ -302,30 +304,104 @@ function openThisDamnFile(pathToVhaFile: string): void {
     userWantedToOpen = undefined;
   }
 
-  fs.readFile(pathToVhaFile, (err, data) => {
-    if (err) {
-      GLOBALS.angularApp.sender.send('show-msg-dialog', systemMessages.error, systemMessages.noSuchFileFound, pathToVhaFile);
-      GLOBALS.angularApp.sender.send('please-open-wizard');
-    } else {
-      app.addRecentDocument(pathToVhaFile);
+  try {
+    const readResult = await readVhaFileWithBackup(pathToVhaFile);
+    let finalObject: FinalObject;
 
-      const finalObject: FinalObject = JSON.parse(data);
+    if (readResult.source === 'primary') {
+      finalObject = readResult.finalObject;
+    } else if (readResult.source === 'unreadable') {
+      const readError = readResult.primaryError ? readResult.primaryError.message : 'Unknown read error';
+      await dialog.showMessageBox(win, {
+        buttons: ['OK'],
+        detail: `${readError}\n\nCheck that the drive is connected and that the catalogue can be read. No recovery was attempted and no files were changed.`,
+        message: 'This Video Hub catalogue could not be read.',
+        title: 'Unable to Read Catalogue',
+        type: 'error',
+      });
+      GLOBALS.angularApp.sender.send('please-open-wizard', false, pathToVhaFile);
+      return;
+    } else if (readResult.source === 'backup') {
+    const recoveryChoice = await dialog.showMessageBox(win, {
+      buttons: ['Recover Backup', 'Cancel'],
+      cancelId: 1,
+      defaultId: 0,
+      detail: 'A valid backup is available. It may not contain the most recent changes. Any recoverable damaged contents will be preserved before recovery.',
+      message: 'This Video Hub catalogue is incomplete or invalid.',
+      noLink: true,
+      title: 'Recover Video Hub Catalogue',
+      type: 'warning',
+    });
 
-      // set globals from file
-      GLOBALS.currentlyOpenVhaFile = pathToVhaFile;
-      GLOBALS.selectedOutputFolder = path.parse(pathToVhaFile).dir;
-      GLOBALS.hubName = finalObject.hubName;
-      GLOBALS.screenshotSettings = finalObject.screenshotSettings;
-      upgradeToVersion3(finalObject);
-      console.log('setting inputDirs');
-      console.log(finalObject.inputDirs);
-      GLOBALS.selectedSourceFolders = finalObject.inputDirs;
-
-      sendFinalObjectToAngular(finalObject, GLOBALS);
-
-      setUpDirectoryWatchers(finalObject.inputDirs, finalObject.images);
+    if (recoveryChoice.response !== 0) {
+      GLOBALS.angularApp.sender.send('please-open-wizard', false, pathToVhaFile);
+      return;
     }
-  });
+
+    try {
+      const recoveryResult = await recoverVhaFileFromBackup(pathToVhaFile);
+      finalObject = recoveryResult.finalObject;
+
+      const preservationDetail = recoveryResult.corruptPath
+        ? 'The damaged catalogue was preserved at:\n' + recoveryResult.corruptPath
+        : 'The backup was restored. The damaged catalogue was empty or missing, so no additional copy was created.';
+      await dialog.showMessageBox(win, {
+        buttons: ['OK'],
+        detail: preservationDetail,
+        message: 'The Video Hub catalogue was recovered successfully.',
+        title: 'Catalogue Recovered',
+        type: 'info',
+      });
+    } catch (error) {
+      const recoveryError = error instanceof Error ? error.message : String(error);
+      await dialog.showMessageBox(win, {
+        buttons: ['OK'],
+        detail: recoveryError,
+        message: 'The catalogue backup could not be recovered. Neither file was changed.',
+        title: 'Catalogue Recovery Failed',
+        type: 'error',
+      });
+      GLOBALS.angularApp.sender.send('please-open-wizard', false, pathToVhaFile);
+      return;
+    }
+    } else {
+      const primaryError = readResult.primaryError ? readResult.primaryError.message : 'Unknown error';
+      const backupError = readResult.backupError ? readResult.backupError.message : 'No valid backup was found';
+      await dialog.showMessageBox(win, {
+        buttons: ['OK'],
+        detail: `Catalogue: ${primaryError}\nBackup: ${backupError}\n\nNo files were changed.`,
+        message: 'This Video Hub catalogue and its backup could not be opened.',
+        title: 'Unable to Open Catalogue',
+        type: 'error',
+      });
+      GLOBALS.angularApp.sender.send('please-open-wizard', false, pathToVhaFile);
+      return;
+    }
+
+    // set globals only after a catalogue has been parsed and validated successfully
+    upgradeToVersion3(finalObject);
+    GLOBALS.currentlyOpenVhaFile = pathToVhaFile;
+    GLOBALS.selectedOutputFolder = path.parse(pathToVhaFile).dir;
+    GLOBALS.hubName = finalObject.hubName;
+    GLOBALS.screenshotSettings = finalObject.screenshotSettings;
+    GLOBALS.selectedSourceFolders = finalObject.inputDirs;
+
+    app.addRecentDocument(pathToVhaFile);
+    sendFinalObjectToAngular(finalObject, GLOBALS);
+    setUpDirectoryWatchers(finalObject.inputDirs, finalObject.images);
+  } catch (error) {
+    const unexpectedError = error instanceof Error ? error.message : String(error);
+    await dialog.showMessageBox(win, {
+      buttons: ['OK'],
+      detail: `${unexpectedError}\n\nNo catalogue files were changed.`,
+      message: 'The Video Hub catalogue could not be initialized safely.',
+      title: 'Unable to Open Catalogue',
+      type: 'error',
+    });
+    if (GLOBALS.angularApp) {
+      GLOBALS.angularApp.sender.send('please-open-wizard', false, pathToVhaFile);
+    }
+  }
 }
 
 // =================================================================================================
@@ -431,7 +507,18 @@ function writeVhaFileAndStartExtraction(): void {
 
   const pathToTheFile = path.join(GLOBALS.selectedOutputFolder, GLOBALS.hubName + '.vha2');
 
-  writeVhaFileToDisk(finalObject, pathToTheFile, () => {
+  writeVhaFileToDisk(finalObject, pathToTheFile, (error: Error) => {
+
+    if (error) {
+      dialog.showMessageBox(win, {
+        buttons: ['OK'],
+        detail: error.message,
+        message: 'The new Video Hub catalogue could not be saved.',
+        title: 'Catalogue Save Failed',
+        type: 'error',
+      });
+      return;
+    }
 
     GLOBALS.currentlyOpenVhaFile = pathToTheFile;
 
@@ -470,7 +557,18 @@ ipcMain.on('load-this-vha-file', (event, pathToVhaFile: string, finalObjectToSav
 
   if (finalObjectToSave !== null) {
 
-    writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, () => {
+    writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, (error: Error) => {
+      if (error) {
+        dialog.showMessageBox(win, {
+          buttons: ['OK'],
+          detail: error.message,
+          message: 'The current catalogue could not be saved, so the other hub was not opened.',
+          title: 'Catalogue Save Failed',
+          type: 'error',
+        });
+        event.sender.send('current-vha-file-save-failed', error.message);
+        return;
+      }
       console.log('.vha2 file saved before opening another');
       openThisDamnFile(pathToVhaFile);
     });
