@@ -4,14 +4,15 @@ This is an unsupported personal fork of [Video Hub App 3](http://www.videohubapp
 
 **All changes in this fork were made utilising LLMs. Use this software at your own risk.** This fork is not supported or endorsed by the original developer.
 
-- Current fork version: `v3.3.0-sin.5`
-- Change summary updated: 20/07/2026
+- Current fork version: `v3.3.0-sin.6`
+- Change summary updated: 21/07/2026
 
 ## Changes from the Upstream App
 
 | Change Location | Change | Justification |
 | --- | --- | --- |
 | Core Functionality<br>↳ Catalogue Editor | Added an in-app catalogue JSON editor with tag autocomplete, normalized comma-separated tag fields, batch tagging for displayed search results, support for new custom tags, and automatic main-view refresh after closing the editor. | Provides a practical way to inspect and repair hub catalogue metadata, while making individual and large-scale tag maintenance faster and ensuring completed edits appear immediately in the main interface. |
+| Core Functionality<br>↳ Catalogue Persistence | Replaced direct catalogue and settings writes with validated atomic saves, serialized overlapping catalogue updates, and added confirmation-based recovery from a valid `.vha2.bak` file. Invalid, empty, unreadable, or unavailable catalogues now produce controlled errors instead of crashing or being overwritten, and failed startup opens the normal hub wizard. | Protects catalogue data during editor saves, hub switching, shutdown, interrupted writes, malformed JSON, and disconnected storage while retaining a safe path back into the application. |
 | Core Functionality<br>↳ Media Extraction | Increased thumbnail and filmstrip extraction time allowances to four times their upstream values. | Reduces failed thumbnail generation for slow files, high-resolution videos, and media stored on network drives. |
 | Core Functionality<br>↳ Playback Statistics | Added a 'Reset Times Played' option and made the times-played filter handle missing values safely. | Allows playback statistics to be cleared without recreating a hub and prevents absent legacy values from producing invalid filter ranges. |
 | Core Functionality<br>↳ Tag Management | Added confirmation-protected catalogue-wide tag removal from the Tags tray, including cleanup of the associated tag count and colour metadata. | Allows obsolete tags to be removed from every video in one controlled operation while reducing accidental catalogue-wide changes. |
@@ -38,14 +39,14 @@ This is an unsupported personal fork of [Video Hub App 3](http://www.videohubapp
 Install the Debian package with:
 
 ```bash
-sudo apt install ./video-hub-app-sin_3.3.0-sin.5_amd64.deb
+sudo apt install ./video-hub-app-sin_3.3.0-sin.6_amd64.deb
 ```
 
 For future releases, download the newer `.deb` and install it over the existing fork package with `apt install`. Application settings are stored separately from the installed package and should remain available after an upgrade.
 
 ### macOS ARM64
 
-Download `video-hub-app-sin-v3.3.0-sin.5-arm64.dmg`, open it, and copy 'Video Hub App SIN' into Applications. This personal build is unsigned and unnotarized, so macOS may display a security warning when it is first opened. For future releases, close the application and replace the existing copy with the newer version.
+Download `video-hub-app-sin-v3.3.0-sin.6-arm64.dmg`, open it, and copy 'Video Hub App SIN' into Applications. This personal build is unsigned and unnotarized, so macOS may display a security warning when it is first opened. For future releases, close the application and replace the existing copy with the newer version.
 
 Neither package checks for updates automatically. New versions must be downloaded manually from this fork's GitHub Releases page.
 
