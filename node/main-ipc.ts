@@ -3,7 +3,7 @@ import { app, dialog, shell, BrowserWindow } from 'electron';
 import * as path from 'path';
 const fs = require('fs');
 const trash = require('trash');
-const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
 
 import { GLOBALS } from './main-globals';
 import { ImageElement, FinalObject, InputSources } from '../interfaces/final-object.interface';
@@ -12,6 +12,15 @@ import { createDotPlsFile, writeVhaFileToDisk } from './main-support';
 import { replaceThumbnailWithNewImage } from './main-extract';
 import { closeWatcher, startWatcher, extractAnyMissingThumbs, removeThumbnailsNotInHub } from './main-extract-async';
 import { writeJsonAtomically } from './vha-file-persistence';
+import {
+  buildPlayerLaunch,
+  isAllowedExternalUrl,
+  normalizeAbsolutePath,
+  ProcessLaunch,
+  requireConfiguredSourceRoot,
+  resolveExistingMediaPath,
+  resolveNewMediaPath,
+} from './local-operation-safety';
 
 /**
  * Set up the listeners
@@ -22,10 +31,60 @@ import { writeJsonAtomically } from './vha-file-persistence';
  */
 export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
 
+  const activeWindow = (): any => {
+    const currentWindow = GLOBALS.winRef;
+    if (currentWindow && !currentWindow.isDestroyed()) {
+      return currentWindow;
+    }
+    return BrowserWindow.getFocusedWindow() || undefined;
+  };
+
+  const showOpenDialog = (options: any): Promise<any> => {
+    const owner = activeWindow();
+    return owner ? dialog.showOpenDialog(owner, options) : dialog.showOpenDialog(options);
+  };
+
+  const configuredSourcePaths = (): string[] => Object.values(GLOBALS.selectedSourceFolders || {})
+    .map((source: any) => source && source.path)
+    .filter((sourcePath: unknown): sourcePath is string => typeof sourcePath === 'string');
+
+  const trustedIpcOn = (channel: string, listener: (event: any, ...args: any[]) => void): void => {
+    ipc.on(channel, (event, ...args): void => {
+      const trustedWindow = GLOBALS.winRef;
+      const trustedWebContents = trustedWindow && !trustedWindow.isDestroyed()
+        ? trustedWindow.webContents
+        : null;
+      if (!trustedWebContents || event.sender.id !== trustedWebContents.id) {
+        console.warn('Ignored IPC message from an untrusted renderer:', channel);
+        return;
+      }
+      listener(event, ...args);
+    });
+  };
+
+  const launchDetachedProcess = (launch: ProcessLaunch, event): void => {
+    try {
+      const child = spawn(launch.command, launch.args, {
+        detached: true,
+        shell: false,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      child.once('error', (error: Error) => {
+        console.error('Unable to launch external video player:', error);
+        event.sender.send('file-not-found');
+      });
+      child.unref();
+    } catch (error) {
+      console.error('Unable to launch external video player:', error);
+      event.sender.send('file-not-found');
+    }
+  };
+
   /**
    * Un-Maximize the window
    */
-  ipc.on('un-maximize-window', (event) => {
+  trustedIpcOn('un-maximize-window', (event) => {
     if (BrowserWindow.getFocusedWindow()) {
       BrowserWindow.getFocusedWindow().unmaximize();
     }
@@ -34,7 +93,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Minimize the window
    */
-  ipc.on('minimize-window', (event) => {
+  trustedIpcOn('minimize-window', (event) => {
     if (BrowserWindow.getFocusedWindow()) {
       BrowserWindow.getFocusedWindow().minimize();
     }
@@ -43,21 +102,31 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Open the explorer to the relevant file
    */
-  ipc.on('open-in-explorer', (event, fullPath: string) => {
-    shell.showItemInFolder(fullPath);
+  trustedIpcOn('open-in-explorer', (event, fullPath: string) => {
+    try {
+      shell.showItemInFolder(normalizeAbsolutePath(fullPath, 'File'));
+    } catch (error) {
+      console.warn('Ignored invalid file path:', error);
+    }
   });
 
   /**
    * Open a URL in system's default browser
    */
-  ipc.on('please-open-url', (event, urlToOpen: string): void => {
-    shell.openExternal(urlToOpen, { activate: true });
+  trustedIpcOn('please-open-url', (event, urlToOpen: string): void => {
+    if (!isAllowedExternalUrl(urlToOpen)) {
+      console.warn('Ignored unsafe external URL.');
+      return;
+    }
+    shell.openExternal(urlToOpen, { activate: true }).catch((error: Error) => {
+      console.error('Unable to open external URL:', error);
+    });
   });
 
   /**
    * Maximize the window
    */
-  ipc.on('maximize-window', (event) => {
+  trustedIpcOn('maximize-window', (event) => {
     if (BrowserWindow.getFocusedWindow()) {
       BrowserWindow.getFocusedWindow().maximize();
     }
@@ -66,10 +135,23 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Open a particular video file clicked inside Angular
    */
-  ipc.on('open-media-file', (event, fullFilePath) => {
-    fs.access(fullFilePath, fs.constants.F_OK, (err: any) => {
+  trustedIpcOn('open-media-file', (event, fullFilePath) => {
+    let normalizedMediaPath: string;
+    try {
+      normalizedMediaPath = normalizeAbsolutePath(fullFilePath, 'Media file');
+    } catch {
+      event.sender.send('file-not-found');
+      return;
+    }
+
+    fs.access(normalizedMediaPath, fs.constants.F_OK, (err: any) => {
       if (!err) {
-        shell.openPath(path.normalize(fullFilePath));
+        shell.openPath(normalizedMediaPath).then((errorMessage: string) => {
+          if (errorMessage) {
+            console.error(errorMessage);
+            event.sender.send('file-not-found');
+          }
+        });
       } else {
         event.sender.send('file-not-found');
       }
@@ -79,12 +161,21 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Open a particular video file clicked inside Angular at particular timestamp
    */
-  ipc.on('open-media-file-at-timestamp', (event, executablePath, fullFilePath: string, args: string) => {
-    fs.access(fullFilePath, fs.constants.F_OK, (err: any) => {
+  trustedIpcOn('open-media-file-at-timestamp', (event, executablePath, fullFilePath: string, args: string) => {
+    let launch: ProcessLaunch;
+    let normalizedMediaPath: string;
+    try {
+      normalizedMediaPath = normalizeAbsolutePath(fullFilePath, 'Media file');
+      launch = buildPlayerLaunch(executablePath, normalizedMediaPath, args);
+    } catch (error) {
+      console.warn('Ignored invalid custom-player request:', error);
+      event.sender.send('file-not-found');
+      return;
+    }
+
+    fs.access(normalizedMediaPath, fs.constants.F_OK, (err: any) => {
       if (!err) {
-        const cmdline: string = `"${path.normalize(executablePath)}" "${path.normalize(fullFilePath)}" ${args}`;
-        console.log(cmdline);
-        exec(cmdline);
+        launchDetachedProcess(launch, event);
       } else {
         event.sender.send('file-not-found');
       }
@@ -95,7 +186,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * Handle dragging a file out of VHA into a video editor (e.g. Vegas or Premiere)
    * if `imgPath` points to a file that does not exist, replace with default image
    */
-  ipc.on('drag-video-out-of-electron', (event, filePath, imgPath): void => {
+  trustedIpcOn('drag-video-out-of-electron', (event, filePath, imgPath): void => {
     fs.access(imgPath, fs.constants.F_OK, (err: any) => {
       if (!err) {
         event.sender.startDrag({
@@ -115,9 +206,9 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Select default video player
    */
-  ipc.on('select-default-video-player', (event) => {
+  trustedIpcOn('select-default-video-player', (event) => {
     console.log('asking for default video player');
-    dialog.showOpenDialog(win, {
+    showOpenDialog({
       title: systemMessages.selectDefaultPlayer, // TODO: check if errors out now that this is in `main-ipc.ts`
       filters: [
         {
@@ -143,7 +234,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * 2. save .pls file
    * 3. ask OS to open the .pls file
    */
-  ipc.on('please-create-playlist', (event, playlist: ImageElement[], sourceFolderMap: InputSources, execPath: string) => {
+  trustedIpcOn('please-create-playlist', (event, playlist: ImageElement[], sourceFolderMap: InputSources, execPath: string) => {
 
     const cleanPlaylist: ImageElement[] = playlist.filter((element: ImageElement) => {
       return element.cleanName !== '*FOLDER*';
@@ -155,9 +246,12 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
       createDotPlsFile(savePath, cleanPlaylist, sourceFolderMap, () => {
 
         if (execPath) { // if `preferredVideoPlayer` is sent
-          const cmdline: string = `"${path.normalize(execPath)}" "${path.normalize(savePath)}"`;
-          console.log(cmdline);
-          exec(cmdline);
+          try {
+            launchDetachedProcess(buildPlayerLaunch(execPath, savePath, ''), event);
+          } catch (error) {
+            console.warn('Ignored invalid custom-player request:', error);
+            event.sender.send('file-not-found');
+          }
         } else {
           shell.openPath(savePath);
         }
@@ -168,10 +262,17 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Delete file from computer (send to recycling bin / trash) or dangerously delete (bypass trash)
    */
-  ipc.on('delete-video-file', (event, basePath: string, item: ImageElement, dangerousDelete: boolean): void => {
-    const fileToDelete = path.join(basePath, item.partialPath, item.fileName);
+  trustedIpcOn('delete-video-file', (event, basePath: string, item: ImageElement, dangerousDelete: boolean): void => {
+    let fileToDelete: string;
+    try {
+      const configuredBasePath = requireConfiguredSourceRoot(basePath, configuredSourcePaths());
+      fileToDelete = resolveExistingMediaPath(configuredBasePath, item.partialPath, item.fileName);
+    } catch (error) {
+      console.warn('Ignored unsafe delete path:', error);
+      return;
+    }
 
-    if (dangerousDelete) {
+    if (dangerousDelete === true) {
 
       fs.unlink(fileToDelete, (err) => {
         if (err) {
@@ -184,8 +285,12 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
     } else {
 
       (async () => {
-        await trash(fileToDelete);
-        notifyFileDeleted(event, fileToDelete, item);
+        try {
+          await trash(fileToDelete);
+          notifyFileDeleted(event, fileToDelete, item);
+        } catch (error) {
+          console.error('Unable to move file to trash:', error);
+        }
       })();
 
     }
@@ -209,7 +314,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Method to replace thumbnail of a particular item
    */
-  ipc.on('replace-thumbnail', (event, pathToIncomingJpg: string, item: ImageElement) => {
+  trustedIpcOn('replace-thumbnail', (event, pathToIncomingJpg: string, item: ImageElement) => {
     const fileToReplace: string = path.join(
         GLOBALS.selectedOutputFolder,
         'vha-' + GLOBALS.hubName,
@@ -233,8 +338,8 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * Summon system modal to choose INPUT directory
    * where all the videos are located
    */
-  ipc.on('choose-input', (event) => {
-    dialog.showOpenDialog(win, {
+  trustedIpcOn('choose-input', (event) => {
+    showOpenDialog({
       properties: ['openDirectory']
     }).then(result => {
       const inputDirPath: string = result.filePaths[0];
@@ -248,8 +353,8 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * Summon system modal to choose NEW input directory for a now-disconnected folder
    * where all the videos are located
    */
-  ipc.on('reconnect-this-folder', (event, inputSource: number) => {
-    dialog.showOpenDialog(win, {
+  trustedIpcOn('reconnect-this-folder', (event, inputSource: number) => {
+    showOpenDialog({
       properties: ['openDirectory']
     }).then(result => {
       const inputDirPath: string = result.filePaths[0];
@@ -262,7 +367,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Stop watching a particular folder
    */
-  ipc.on('stop-watching-folder', (event, watchedFolderIndex: number) => {
+  trustedIpcOn('stop-watching-folder', (event, watchedFolderIndex: number) => {
     console.log('stop watching:', watchedFolderIndex);
     closeWatcher(watchedFolderIndex);
   });
@@ -270,7 +375,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Stop watching a particular folder
    */
-  ipc.on('start-watching-folder', (event, watchedFolderIndex: string, path2: string, persistent: boolean) => {
+  trustedIpcOn('start-watching-folder', (event, watchedFolderIndex: string, path2: string, persistent: boolean) => {
     // annoyingly it's not a number :     ^^^^^^^^^^^^^^^^^^ -- because object keys are strings :(
     console.log('start watching:', watchedFolderIndex, path2, persistent);
     startWatcher(parseInt(watchedFolderIndex, 10), path2, persistent);
@@ -279,14 +384,14 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * extract any missing thumbnails
    */
-  ipc.on('add-missing-thumbnails', (event, finalArray: ImageElement[], extractClips: boolean) => {
+  trustedIpcOn('add-missing-thumbnails', (event, finalArray: ImageElement[], extractClips: boolean) => {
     extractAnyMissingThumbs(finalArray);
   });
 
   /**
    * Remove any thumbnails for files no longer present in the hub
    */
-  ipc.on('clean-old-thumbnails', (event, finalArray: ImageElement[]) => {
+  trustedIpcOn('clean-old-thumbnails', (event, finalArray: ImageElement[]) => {
     // !!! WARNING
     const screenshotOutputFolder: string = path.join(GLOBALS.selectedOutputFolder, 'vha-' + GLOBALS.hubName);
     // !! ^^^^^^^^^^^^^^^^^^^^^^ - make sure this points to the folder with screenshots only!
@@ -304,7 +409,7 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Save the currently open VHA file without closing the app.
    */
-  ipc.on('save-current-vha-file', (event, finalObjectToSave: FinalObject) => {
+  trustedIpcOn('save-current-vha-file', (event, finalObjectToSave: FinalObject) => {
     if (finalObjectToSave !== null) {
       writeVhaFileToDisk(finalObjectToSave, GLOBALS.currentlyOpenVhaFile, (err) => {
         if (err) {
@@ -322,8 +427,8 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    * Summon system modal to choose OUTPUT directory
    * where the final .vha2 file, vha-folder, and all screenshots will be saved
    */
-  ipc.on('choose-output', (event) => {
-    dialog.showOpenDialog(win, {
+  trustedIpcOn('choose-output', (event) => {
+    showOpenDialog({
       properties: ['openDirectory']
     }).then(result => {
       const outputDirPath: string = result.filePaths[0];
@@ -336,11 +441,20 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Try to rename the particular file
    */
-  ipc.on('try-to-rename-this-file', (event, sourceFolder: string, relPath: string, file: string, renameTo: string, index: number): void => {
+  trustedIpcOn('try-to-rename-this-file', (event, sourceFolder: string, relPath: string, file: string, renameTo: string, index: number): void => {
     console.log('renaming file:');
 
-    const original: string = path.join(sourceFolder, relPath, file);
-    const newName: string = path.join(sourceFolder, relPath, renameTo);
+    let original: string;
+    let newName: string;
+    try {
+      const configuredBasePath = requireConfiguredSourceRoot(sourceFolder, configuredSourcePaths());
+      original = resolveExistingMediaPath(configuredBasePath, relPath, file);
+      newName = resolveNewMediaPath(configuredBasePath, relPath, renameTo);
+    } catch (error) {
+      console.warn('Ignored unsafe rename path:', error);
+      event.sender.send('rename-file-response', index, false, renameTo, file, 'RIGHTCLICK.errorSomeError');
+      return;
+    }
 
     console.log(original);
     console.log(newName);
@@ -375,11 +489,11 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
   /**
    * Close the window / quit / exit the app
    */
-  ipc.on('close-window', (event, settingsToSave: SettingsObject, finalObjectToSave: FinalObject) => {
+  trustedIpcOn('close-window', (event, settingsToSave: SettingsObject, finalObjectToSave: FinalObject) => {
     const reportCloseFailure = (error: unknown, message: string) => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       event.sender.send('close-window-save-failed', errorMessage);
-      const activeWindow = BrowserWindow.getFocusedWindow() || GLOBALS.winRef;
+      const ownerWindow = activeWindow();
       const dialogOptions = {
         buttons: ['OK'],
         detail: errorMessage,
@@ -387,8 +501,8 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
         title: 'Unable to Close Safely',
         type: 'error' as const,
       };
-      if (activeWindow && !activeWindow.isDestroyed()) {
-        dialog.showMessageBox(activeWindow, dialogOptions);
+      if (ownerWindow && !ownerWindow.isDestroyed()) {
+        dialog.showMessageBox(ownerWindow, dialogOptions);
       } else {
         dialog.showMessageBox(dialogOptions);
       }
@@ -396,10 +510,10 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
 
     const closeWindow = () => {
       try {
-        const activeWindow = BrowserWindow.getFocusedWindow() || GLOBALS.winRef;
+        const windowToClose = activeWindow();
         GLOBALS.readyToQuit = true;
-        if (activeWindow && !activeWindow.isDestroyed()) {
-          activeWindow.close();
+        if (windowToClose && !windowToClose.isDestroyed()) {
+          windowToClose.close();
         }
       } catch {
         // The window may already be closed while the app is quitting.

@@ -1,7 +1,7 @@
 {
   "productName": "Video Hub App SIN",
   "appId": "com.github.sebiimaks.videohubappsin",
-  "copyright": "Copyright © 2022 Boris Yakubchik",
+  "copyright": "Copyright © 2022 Boris Yakubchik; fork modifications © 2026 sebiimaks",
   "directories": {
     "output": "release/"
   },
@@ -16,6 +16,14 @@
     {
       "from": "LICENSE",
       "to": "LICENSE"
+    },
+    {
+      "from": "build/media-tools",
+      "to": "media-tools"
+    },
+    {
+      "from": "build/media-legal",
+      "to": "licenses"
     },
     {
       "from": "src/assets/icons/mac/touch-bar",
@@ -33,10 +41,6 @@
   "win": {
     "icon": "dist/favicon",
     "asar": true,
-    "asarUnpack": [
-      "../node_modules/ffmpeg-static",
-      "../node_modules/node-ffprobe-installer"
-    ],
     "target": [
       "nsis",
       "portable"
@@ -48,16 +52,11 @@
     "target": {
       "target": "dmg",
       "arch": [
-        "x64",
         "arm64"
       ]
     },
     "icon": "src/assets/icons.icns",
-    "asar": true,
-    "asarUnpack": [
-      "../node_modules/ffmpeg-static",
-      "../node_modules/node-ffprobe-installer"
-    ]
+    "asar": true
   },
   "linux": {
     "icon": "src/assets/icons/png",

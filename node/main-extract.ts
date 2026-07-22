@@ -25,7 +25,7 @@ const fs = require('fs');
 import * as path from 'path';
 const spawn = require('child_process').spawn;
 
-const ffmpegPath = require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked');
+import { ffmpegPath } from './media-tool-paths';
 
 import { GLOBALS } from './main-globals';
 
@@ -43,7 +43,7 @@ import type { ImageElement, ScreenshotSettings } from '../interfaces/final-objec
  * @param duration
  * @param savePath
  */
-const extractSingleFrameArgs = (
+export const extractSingleFrameArgs = (
   pathToVideo: string,
   screenshotHeight: number,
   duration: number,
@@ -76,7 +76,7 @@ const extractSingleFrameArgs = (
  * @param numberOfScreenshots  -- number of screenshots to extract
  * @param savePath             -- full path to file name and extension
  */
-const generateScreenshotStripArgs = (
+export const generateScreenshotStripArgs = (
   pathToVideo: string,
   duration: number,
   screenshotHeight: number,
@@ -124,7 +124,7 @@ const generateScreenshotStripArgs = (
  * @param snippetLength -- length in seconds of each snippet
  * @param savePath      -- full path to file name and extension
  */
-const generatePreviewClipArgs = (
+export const generatePreviewClipArgs = (
   pathToVideo: string,
   duration: number,
   clipHeight: number,
@@ -167,7 +167,7 @@ const generatePreviewClipArgs = (
  * @param pathToClip -- full path to where the .mp4 clip is located
  * @param fileHash   -- full path to where the .jpg should be saved
  */
-const extractFirstFrameArgs = (
+export const extractFirstFrameArgs = (
   pathToClip: string,
   pathToThumb: string
 ): string[] => {
@@ -497,7 +497,9 @@ function spawn_ffmpeg_and_run(
     // Uncomment things in this method (and the `performance` import) to check how long extraction takes
     // const t0: number = performance.now();
 
-    const ffmpeg_process = spawn(ffmpegPath, args);
+    const ffmpeg_process = spawn(ffmpegPath, ['-nostdin', '-hide_banner', ...args], {
+      windowsHide: true,
+    });
 
     const killProcessTimeout = setTimeout(() => {
       if (!ffmpeg_process.killed) {
@@ -519,11 +521,15 @@ function spawn_ffmpeg_and_run(
         console.log('grep stderr: ' + data);
       }
     });
-    ffmpeg_process.on('exit', () => {
+    ffmpeg_process.on('error', () => {
+      clearTimeout(killProcessTimeout);
+      return resolve(false);
+    });
+    ffmpeg_process.on('exit', (code: number | null) => {
       clearTimeout(killProcessTimeout);
       // const t1: number = performance.now();
       // console.log(description + ' ' + Math.round(t1 - t0) + ' < ' + maxRunningTime);
-      return resolve(true);
+      return resolve(code === 0);
     });
 
   });

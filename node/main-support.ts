@@ -11,8 +11,8 @@ import { GLOBALS } from './main-globals'; // TODO -- eliminate dependence on `GL
 
 import * as path from 'path';
 
-const exec = require('child_process').exec;
-const ffprobePath = require('@ffprobe-installer/ffprobe').path.replace('app.asar', 'app.asar.unpacked');
+const execFile = require('child_process').execFile;
+import { ffprobePath } from './media-tool-paths';
 const fs = require('fs');
 const hash = require('object-hash');
 const hasher = require('crypto').createHash;
@@ -22,6 +22,7 @@ import type { FinalObject, ImageElement, ScreenshotSettings, InputSources, Resol
 import { NewImageElement } from '../interfaces/final-object.interface';
 import { startFileSystemWatching, resetWatchers } from './main-extract-async';
 import { writeVhaJsonAtomically } from './vha-file-persistence';
+import { buildFfprobeArguments } from './local-operation-safety';
 
 interface ResolutionMeta {
   label: ResolutionString;
@@ -467,13 +468,31 @@ export function extractMetadataAsync(
   screenshotSettings: ScreenshotSettings,
 ): Promise<ImageElement> {
   return new Promise((resolve, reject) => {
-    const ffprobeCommand = '"' + ffprobePath + '" -of json -show_streams -show_format -select_streams V "' + path.normalize(filePath) + '"';
+    let ffprobeArguments: string[];
+    try {
+      ffprobeArguments = buildFfprobeArguments(path.normalize(filePath));
+    } catch (error) {
+      reject(error);
+      return;
+    }
 
-    exec(ffprobeCommand, (err, data, stderr) => {
+    execFile(ffprobePath, ffprobeArguments, {
+      maxBuffer: 16 * 1024 * 1024,
+      // Large or remote files can legitimately take longer than one minute to
+      // inspect. A finite upper bound still prevents an orphaned probe process.
+      timeout: 5 * 60 * 1000,
+      windowsHide: true,
+    }, (err, data, stderr) => {
       if (err) {
-        reject();
+        reject(err);
       } else {
-        const metadata: ffprobeJSON = JSON.parse(data);
+        let metadata: ffprobeJSON;
+        try {
+          metadata = JSON.parse(data);
+        } catch (error) {
+          reject(error);
+          return;
+        }
         const stream = getBestStream(metadata);
         const fileDuration = getFileDuration(metadata);
         const realFps = getFps(metadata);
@@ -484,7 +503,8 @@ export function extractMetadataAsync(
 
         fs.stat(filePath, (err2, fileStat) => {
           if (err2) {
-            reject();
+            reject(err2);
+            return;
           }
 
           const imageElement = NewImageElement();
