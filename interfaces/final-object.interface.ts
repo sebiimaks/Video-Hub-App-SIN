@@ -7,6 +7,8 @@ export type AllowedScreenshotHeightString = '144' | '216' | '288' | '360' | '432
 
 export type ResolutionString = '' | 'SD' | '720' | '720+' | '1080' | '1080+' | '4K' | '4K+';
 
+export const IMPORT_ERROR_TAG = 'import_error';
+
 export interface SourceFolder {
   path: string;
   watch: boolean;
@@ -50,6 +52,7 @@ export interface ImageElement {
   // ------------------------------------------------------------------------
   defaultScreen?: number;        // index of default screenshot to show
   notes?: string;                // any free-form notes a user may want to add to any video
+  metadataImportFailed?: boolean; // ffprobe could not read this file; path-based playback can still be attempted
   playlist?: number;             // timestamp of when user clicked `add to playlist`
   tags?: string[];               // tags associated with this particular file
   year?: number;                 // optional tag to track the year of the video
@@ -64,6 +67,10 @@ export interface ImageElement {
   resolution: ResolutionString;  // e.g. `720`, `1080`, `SD`, `HD`, etc
   selected?: boolean;            // for batch-tagging of videos
   uuid: string                   // to help track inside @for in home.component.html
+}
+
+export function isMetadataImportFailure(element: ImageElement): boolean {
+  return element.metadataImportFailed === true || element.tags?.includes(IMPORT_ERROR_TAG) === true;
 }
 
 export interface ImageElementPlus extends ImageElement {

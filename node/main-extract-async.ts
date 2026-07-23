@@ -15,6 +15,11 @@ import type { ImageElement, ImageElementPlus } from '../interfaces/final-object.
 import { acceptableFiles } from './main-filenames';
 import { extractAll } from './main-extract';
 import { sendCurrentProgress, insertTemporaryFieldsSingle, extractMetadataAsync, cleanUpFileName } from './main-support';
+import {
+  createImportErrorElement,
+  runProbeWithOneRetry,
+  shouldExtractThumbnails,
+} from './media-import-resilience';
 
 export interface TempMetadataQueueObject {
   fullPath: string;
@@ -48,6 +53,8 @@ let numberOfThumbsDeleted = 0;
 // Create maps where the value = 1 always.
 // It is faster to check if key exists than searching through an array.
 let alreadyInAngular: Map<string, 1> = new Map(); // full paths to videos we have metadata for in Angular
+let failedMetadataPaths: Set<string> = new Set();
+let pendingMetadataPaths: Set<string> = new Set();
 
 // These two are together:
 const watcherMap:       Map<number, FSWatcher> = new Map();
@@ -58,6 +65,7 @@ let allFoundFilesMap: Map<number, Map<string, 1>> = new Map();
 
 // Miscellaneous
 let preventSleepIds: number[] = []; // prevent and allow sleep
+let importCompletionSent = false;
 
 // =====================================================================================================================
 
@@ -87,6 +95,9 @@ export function resetAllQueues(): void {
   // Meta queue ========================================================================================================
   metaDone = 0;
   metaExtractionStartTime = 0;
+  pendingMetadataPaths = new Set();
+  failedMetadataPaths = new Set();
+  importCompletionSent = false;
 
   metadataQueue = async.queue(metadataQueueRunner, 1); // 1 is the number of parallel worker functions
                                                        // ^--- experiment with numbers to see what is fastest (try 8)
@@ -94,6 +105,10 @@ export function resetAllQueues(): void {
   metadataQueue.drain(() => {
 
     thumbQueue.resume();
+
+    if (thumbQueue.idle()) {
+      finishImport();
+    }
 
     logPerformance('META QUEUE took ', metaExtractionStartTime);
   });
@@ -107,11 +122,7 @@ export function resetAllQueues(): void {
   thumbQueue.drain(() => {
 
     logPerformance('THUMB QUEUE took ', thumbExtractionStartTime);
-
-    thumbsDone = 0;
-    sendCurrentProgress(1, 1, 'done');
-    console.log('thumbnail extraction complete!');
-    allowSleep();
+    finishImport();
   });
 
   // Delete queue ======================================================================================================
@@ -121,6 +132,26 @@ export function resetAllQueues(): void {
     console.log('all screenshots now deleted');
     GLOBALS.angularApp.sender.send('number-of-screenshots-deleted', numberOfThumbsDeleted);
   });
+}
+
+function finishImport(): void {
+  if (importCompletionSent) {
+    return;
+  }
+  importCompletionSent = true;
+  thumbsDone = 0;
+  sendCurrentProgress(1, 1, 'done');
+  console.log('media import complete!');
+  allowSleep();
+}
+
+function enqueueMetadata(file: TempMetadataQueueObject): void {
+  if (pendingMetadataPaths.has(file.fullPath)) {
+    return;
+  }
+  pendingMetadataPaths.add(file.fullPath);
+  importCompletionSent = false;
+  metadataQueue.push(file);
 }
 
 /**
@@ -163,16 +194,23 @@ function sendNewVideoMetadata(imageElement: ImageElementPlus): void {
 
   alreadyInAngular.set(imageElement.fullPath, 1);
 
+  if (shouldExtractThumbnails(imageElement)) {
+    failedMetadataPaths.delete(imageElement.fullPath);
+  } else {
+    failedMetadataPaths.add(imageElement.fullPath);
+  }
+
   delete imageElement.fullPath; // downgrade to `ImageElement` from `ImageElementPlus`
 
   const elementForAngular = insertTemporaryFieldsSingle(imageElement);
   GLOBALS.angularApp.sender.send('new-video-meta', elementForAngular);
 
-  if (thumbExtractionStartTime === 0) {
-    thumbExtractionStartTime = performance.now();
+  if (shouldExtractThumbnails(imageElement)) {
+    if (thumbExtractionStartTime === 0) {
+      thumbExtractionStartTime = performance.now();
+    }
+    thumbQueue.push(imageElement);
   }
-
-  thumbQueue.push(imageElement);
 }
 
 /**
@@ -197,7 +235,14 @@ export function metadataQueueRunner(file: TempMetadataQueueObject, done): void {
   sendCurrentProgress(metaDone, metaDone + metadataQueue.length() + 1, 'importingMeta');
   metaDone++;
 
-  extractMetadataAsync(file.fullPath, GLOBALS.screenshotSettings)
+  runProbeWithOneRetry(
+    file.fullPath,
+    () => extractMetadataAsync(file.fullPath, GLOBALS.screenshotSettings),
+  )
+    .catch((probeError) => {
+      console.warn('Metadata probe failed; adding path-only catalogue entry:', file.fullPath, probeError);
+      return createImportErrorElement(file.fullPath);
+    })
     .then((imageElement: ImageElementPlus) => {
       imageElement.cleanName = cleanUpFileName(file.name);
       imageElement.fileName = file.name;
@@ -205,9 +250,15 @@ export function metadataQueueRunner(file: TempMetadataQueueObject, done): void {
       imageElement.inputSource = file.inputSource;
       imageElement.partialPath = file.partialPath;
       sendNewVideoMetadata(imageElement);
+    })
+    .catch((error) => {
+      // If the file vanished or the share disconnected completely, skip this
+      // entry while guaranteeing that the following queue item still runs.
+      console.warn('Could not create an import-error catalogue entry:', file.fullPath, error);
+    })
+    .finally(() => {
+      pendingMetadataPaths.delete(file.fullPath);
       done();
-    }, () => {
-      done(); // error, just continue
     });
 
 }
@@ -253,7 +304,7 @@ function superFastSystemScan(inputDir: string, inputSource: number): void {
       }
       allFoundFilesMap.get(inputSource).set(fullPath, 1);
 
-      if (alreadyInAngular.has(fullPath)) {
+      if (alreadyInAngular.has(fullPath) && !failedMetadataPaths.has(fullPath)) {
         return;
       }
 
@@ -266,7 +317,7 @@ function superFastSystemScan(inputDir: string, inputSource: number): void {
         partialPath: '/' + partial,
       };
 
-      metadataQueue.push(newItem);
+      enqueueMetadata(newItem);
 
     });
 
@@ -306,6 +357,10 @@ export function startFileSystemWatching(inputDir: string, inputSource: number, p
                                     || inputDir.startsWith('\\\\');
 
   const watcherConfig = {
+    awaitWriteFinish: {
+      pollInterval: 1000,
+      stabilityThreshold: 5000,
+    },
     cwd: inputDir,
     disableGlobbing: true,
     ignored: 'vha-*', // WARNING - dangerously ignores any path that includes `vha-` anywhere!!!
@@ -339,7 +394,7 @@ export function startFileSystemWatching(inputDir: string, inputSource: number, p
       }
       allFoundFilesMap.get(inputSource).set(fullPath, 1);
 
-      if (alreadyInAngular.has(fullPath)) {
+      if (alreadyInAngular.has(fullPath) && !failedMetadataPaths.has(fullPath)) {
         return;
       }
 
@@ -350,14 +405,34 @@ export function startFileSystemWatching(inputDir: string, inputSource: number, p
         partialPath: partialPath,
       };
 
-      metadataQueue.push(newItem);
+      enqueueMetadata(newItem);
+    })
+    .on('change', (filePath: string) => {
+      const subPath = ('/' + filePath.replace(/\\/g, '/')).replace('//', '/');
+      const partialPath = subPath.substring(0, subPath.lastIndexOf('/'));
+      const fileName = subPath.substring(subPath.lastIndexOf('/') + 1);
+      const fullPath = path.join(inputDir, partialPath, fileName);
+
+      if (!failedMetadataPaths.has(fullPath)) {
+        return;
+      }
+
+      enqueueMetadata({
+        fullPath,
+        inputSource,
+        name: fileName,
+        partialPath,
+      });
     })
     .on('unlink', (partialFilePath: string) => {    // note: this happens even when file is renamed!
       console.log(' !!! FILE DELETED, updating Angular:', partialFilePath);
       GLOBALS.angularApp.sender.send('single-file-deleted', inputSource, partialFilePath);
       // remove element from `alreadyInAngular`
       const basePath: string = GLOBALS.selectedSourceFolders[inputSource].path;
-      alreadyInAngular.delete(path.join(basePath, partialFilePath));
+      const fullPath = path.join(basePath, partialFilePath);
+      alreadyInAngular.delete(fullPath);
+      failedMetadataPaths.delete(fullPath);
+      pendingMetadataPaths.delete(fullPath);
       // note: there is no need to watch for `unlinkDir` since `unlink` fires for every file anyway!
     })
     .on('ready', () => {
@@ -393,6 +468,8 @@ export function resetWatchers(finalArray: ImageElement[]): void {
   });
 
   alreadyInAngular = new Map();
+  failedMetadataPaths = new Set();
+  pendingMetadataPaths = new Set();
 
   allFoundFilesMap = new Map();
 
@@ -404,6 +481,9 @@ export function resetWatchers(finalArray: ImageElement[]): void {
     );
 
     alreadyInAngular.set(fullPath, 1);
+    if (!shouldExtractThumbnails(element)) {
+      failedMetadataPaths.add(fullPath);
+    }
   });
 }
 
@@ -486,8 +566,15 @@ function hasAllThumbs(
 export function extractAnyMissingThumbs(fullArray: ImageElement[]): void {
   preventSleep();
   fullArray.forEach((element: ImageElement) => {
-    thumbQueue.push(element);
+    if (shouldExtractThumbnails(element)) {
+      importCompletionSent = false;
+      thumbQueue.push(element);
+    }
   });
+
+  if (thumbQueue.idle()) {
+    finishImport();
+  }
 }
 
 /**

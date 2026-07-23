@@ -2,7 +2,7 @@ import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
 
 import type { ImageElement, StarRating} from '../../../interfaces/final-object.interface';
-import { NewImageElement } from '../../../interfaces/final-object.interface';
+import { NewImageElement, isMetadataImportFailure } from '../../../interfaces/final-object.interface';
 import type { SettingsButtonsType} from '../common/settings-buttons';
 import { SettingsButtons } from '../common/settings-buttons';
 
@@ -71,11 +71,12 @@ export class FolderViewPipe implements PipeTransform {
    * @param files
    */
   extractFourPreviewHashes(files: ImageElement[]): string {
+    const previewableFiles = files.filter((element) => !isMetadataImportFailure(element));
     let hashes = '';
-    if (files.length > 4 && this.settingsButtons['randomizeFoldersScreenshots'].toggled) {
-      hashes = this.extractRandomPreviewHashes(files);
+    if (previewableFiles.length > 4 && this.settingsButtons['randomizeFoldersScreenshots'].toggled) {
+      hashes = this.extractRandomPreviewHashes([...previewableFiles]);
     } else {
-      hashes = this.extractFirstFourPreviewHashes(files);
+      hashes = this.extractFirstFourPreviewHashes(previewableFiles);
     }
     if (hashes.charAt(0) === ':') {
       hashes = hashes.slice(1);

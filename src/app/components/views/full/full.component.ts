@@ -6,6 +6,7 @@ import { FilePathService } from '../file-path.service';
 import { metaAppear, textAppear } from '../../../common/animations';
 
 import type { ImageElement } from '../../../../../interfaces/final-object.interface';
+import { isMetadataImportFailure } from '../../../../../interfaces/final-object.interface';
 import { ImageElementService } from './../../../services/image-element.service';
 import type { RightClickEmit, VideoClickEmit } from '../../../../../interfaces/shared-interfaces';
 
@@ -16,7 +17,8 @@ import type { RightClickEmit, VideoClickEmit } from '../../../../../interfaces/s
   styleUrls: [
       '../time-and-rez.scss',
       '../film-and-full.scss',
-      '../selected.scss'
+      '../selected.scss',
+      '../import-error-placeholder.scss'
     ],
   animations: [ textAppear, metaAppear ]
 })
@@ -72,6 +74,10 @@ export class FullViewComponent implements OnInit {
     for (let i = 0; i < numOfRows; i++) {
       this.rowOffsets.push(i * Math.floor(this._metaWidth / imgWidth));
     }
+  }
+
+  isImportFailure(): boolean {
+    return isMetadataImportFailure(this.video());
   }
 
   toggleHeart(mouseClick: PointerEvent): void {

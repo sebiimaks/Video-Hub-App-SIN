@@ -135,12 +135,19 @@
     [ngStyle]="{ height: imgHeight() + 'px' }"
   >
 
-    <img
-      class="full-filmstrip"
-      [ngStyle]="{ height: imgHeight() + 'px',
-                  transform: 'translate(' + (-percentOffset) + '%, 0)' }"
-      src="{{ hover ? fullFilePath : firstFilePath }}"
-    >
+    @if (video.metadataImportFailed) {
+      <div class="import-error-placeholder" title="import_error">
+        <app-icon [icon]="'icon-video-x'" [size]="32" />
+        <span>import_error</span>
+      </div>
+    } @else {
+      <img
+        class="full-filmstrip"
+        [ngStyle]="{ height: imgHeight() + 'px',
+                    transform: 'translate(' + (-percentOffset) + '%, 0)' }"
+        src="{{ hover ? fullFilePath : firstFilePath }}"
+      >
+    }
 
   @if (video.selected) {
     <app-icon class="selected" [icon]="'icon-show-more-info'" />

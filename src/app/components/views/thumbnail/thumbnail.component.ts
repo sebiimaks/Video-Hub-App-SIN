@@ -17,6 +17,7 @@ import type { VideoClickEmit, RightClickEmit } from '../../../../../interfaces/s
     '../clip-and-preview.scss',
     '../time-and-rez.scss',
     './thumbnail.component.scss',
+    '../import-error-placeholder.scss',
     '../selected.scss'
   ],
   animations: [textAppear, metaAppear]
@@ -87,6 +88,9 @@ export class ThumbnailComponent implements OnInit, OnDestroy {
   }
 
   mouseEntered() {
+    if (this.video.screens <= 0) {
+      return;
+    }
     this.containerWidth = this.filmstripHolder().nativeElement.getBoundingClientRect().width;
 
     if (this.thumbAutoAdvance()) {
@@ -118,7 +122,7 @@ export class ThumbnailComponent implements OnInit, OnDestroy {
   }
 
   mouseIsMoving($event: any) {
-    if (this.hoverScrub()) {
+    if (this.hoverScrub() && this.video.screens > 0) {
       const cursorX = $event.layerX;
       this.indexToShow = Math.floor(cursorX * (this.video.screens / this.containerWidth));
       this.percentOffset = this.indexToShow * (100 / this.video.screens);

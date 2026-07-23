@@ -10,6 +10,7 @@ import { SourceFolderService } from './source-folder.service';
 
 import type { AppStateInterface } from '../../common/app-state';
 import type { ImageElement, ScreenshotSettings, InputSources } from '../../../../interfaces/final-object.interface';
+import { isMetadataImportFailure } from '../../../../interfaces/final-object.interface';
 
 import { metaAppear, breadcrumbWordAppear } from '../../common/animations';
 
@@ -134,10 +135,15 @@ export class StatisticsComponent implements OnInit, OnDestroy {
   computeAverages() {
     console.log(this.inputFolders());
 
+    let filesWithDurationMetadata = 0;
+
     this.imageElementService.imageElements.forEach((element: ImageElement): void => {
-      this.shortest = Math.min(element.duration, this.shortest);
-      this.longest = Math.max(element.duration, this.longest);
-      this.totalLength += element.duration;
+      if (!isMetadataImportFailure(element)) {
+        this.shortest = Math.min(element.duration, this.shortest);
+        this.longest = Math.max(element.duration, this.longest);
+        this.totalLength += element.duration;
+        filesWithDurationMetadata++;
+      }
 
       this.smallest = Math.min(element.fileSize, this.smallest);
       this.largest = Math.max(element.fileSize, this.largest);
@@ -146,8 +152,15 @@ export class StatisticsComponent implements OnInit, OnDestroy {
 
     this.totalFiles = this.imageElementService.imageElements.length;
 
-    this.avgLength = Math.round(this.totalLength / this.totalFiles);
-    this.avgSize = Math.round(this.totalSize / this.totalFiles);
+    if (this.shortest === Infinity) {
+      this.shortest = 0;
+    }
+    this.avgLength = filesWithDurationMetadata > 0
+      ? Math.round(this.totalLength / filesWithDurationMetadata)
+      : 0;
+    this.avgSize = this.totalFiles > 0
+      ? Math.round(this.totalSize / this.totalFiles)
+      : 0;
   }
 
   /**

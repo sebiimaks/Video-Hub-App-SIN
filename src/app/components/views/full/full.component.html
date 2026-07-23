@@ -1,7 +1,7 @@
 <div
   class="meta-container"
   [ngStyle]="{
-    height: rowOffsets.length * _imgHeight + 30 + 'px',
+    height: (isImportFailure() ? _imgHeight : rowOffsets.length * _imgHeight) + 30 + 'px',
     width: computedWidth + 'px'
   }"
   >
@@ -14,6 +14,20 @@
     [ngClass]="{ 'heart-lit' : video().stars === 5.5 }"
     [icon]="'icon-heart'"
    />
+}
+
+@if (isImportFailure()) {
+  <div
+    (click)="videoClick.emit({ mouseEvent: $event })"
+    (dblclick)="videoClick.emit({ mouseEvent: $event, doubleClick: true })"
+    (contextmenu)="rightClick.emit({ mouseEvent: $event, item: video() })"
+    class="filmstrip-container import-error-placeholder"
+    [ngStyle]="{ height: _imgHeight + 'px' }"
+    title="import_error"
+  >
+    <app-icon [icon]="'icon-video-x'" [size]="32" />
+    <span>import_error</span>
+  </div>
 }
 
 @for (row of rowOffsets; track row) {

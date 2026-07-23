@@ -12,11 +12,17 @@
     class="filmstrip-container"
     [ngStyle]="{
         height: imgHeight() + 'px',
-        'background-image': 'url(' + fullFilePath + ')',
+        'background-image': video().metadataImportFailed ? 'none' : 'url(' + fullFilePath + ')',
         'background-position-x': '-' + filmXoffset + 'px',
         'background-size': 'auto ' + imgHeight() + 'px'
       }"
   >
+    @if (video().metadataImportFailed) {
+      <div class="import-error-placeholder" title="import_error">
+        <app-icon [icon]="'icon-video-x'" [size]="32" />
+        <span>import_error</span>
+      </div>
+    }
     @if (showMeta()) {
       <span class="time">{{ video().durationDisplay }}</span>
       <span class="rez">{{ video().fileSizeDisplay }}

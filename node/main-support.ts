@@ -23,6 +23,7 @@ import { NewImageElement } from '../interfaces/final-object.interface';
 import { startFileSystemWatching, resetWatchers } from './main-extract-async';
 import { writeVhaJsonAtomically } from './vha-file-persistence';
 import { buildFfprobeArguments } from './local-operation-safety';
+import { getFfprobeTimeoutMs } from './media-import-resilience';
 
 interface ResolutionMeta {
   label: ResolutionString;
@@ -351,6 +352,9 @@ function getFileDuration(metadata: ffprobeJSON): string {
  * Calculation of video bitrate in mb/s
  */
 function getBitrate(fileSize: number, duration: number): number {
+  if (!Number.isFinite(fileSize) || !Number.isFinite(duration) || duration <= 0) {
+    return 0;
+  }
   const bitrate = ((fileSize / 1000) / duration) / 1000;
   return Math.round(bitrate * 100) / 100;
 }
@@ -418,42 +422,41 @@ function computeNumberOfScreenshots(screenshotSettings: ScreenshotSettings, dura
  * @param pathToFile  -- path to file
  * @param stats -- Stats from `fs.stat(pathToFile)`
  */
-function hashFileAsync(pathToFile: string, stats: Stats): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const sampleSize = 16 * 1024;
-    const sampleThreshold = 128 * 1024;
-    const fileSize = stats.size;
-    let data: Buffer;
+async function hashFileAsync(pathToFile: string, stats: Stats): Promise<string> {
+  const sampleSize = 16 * 1024;
+  const sampleThreshold = 128 * 1024;
+  const fileSize = stats.size;
+  let data: Buffer;
 
-    if (fileSize < sampleThreshold) {
-      fs.readFile(pathToFile, (err, data2) => {
-        if (err) { throw err; }
-        // append the file size to the data
-        const buf = Buffer.concat([data2, Buffer.from(fileSize.toString())]);
-        // make the magic happen!
-        const hash = hasher('md5').update(buf.toString('hex')).digest('hex');
-        resolve(hash);
-      }); // too small, just read the whole file
-    } else {
-      data = Buffer.alloc(sampleSize * 3);
-      fs.open(pathToFile, 'r', (err, fd) => {
-        fs.read(fd, data, 0, sampleSize, 0, (err2, bytesRead, buffer) => { // read beginning of file
-          fs.read(fd, data, sampleSize, sampleSize, Math.floor(fileSize / 2), (err3, bytesRead2, buffer2) => {
-            fs.read(fd, data, sampleSize * 2, sampleSize, fileSize - sampleSize, (err4, bytesRead3, buffer3) => {
-              fs.close(fd, (err5) => {
-                // append the file size to the data
-                const buf = Buffer.concat([data, Buffer.from(fileSize.toString())]);
-                // make the magic happen!
-                const hash = hasher('md5').update(buf.toString('hex')).digest('hex');
-                resolve(hash);
-              });
-            });
-          });
-        });
-      });
+  if (fileSize < sampleThreshold) {
+    data = await fs.promises.readFile(pathToFile);
+  } else {
+    data = Buffer.alloc(sampleSize * 3);
+    const fileHandle = await fs.promises.open(pathToFile, 'r');
+    try {
+      const positions = [0, Math.floor(fileSize / 2), fileSize - sampleSize];
+      for (let index = 0; index < positions.length; index++) {
+        let bytesRead = 0;
+        while (bytesRead < sampleSize) {
+          const result = await fileHandle.read(
+            data,
+            index * sampleSize + bytesRead,
+            sampleSize - bytesRead,
+            positions[index] + bytesRead,
+          );
+          if (result.bytesRead === 0) {
+            throw new Error('Unexpected end of file while hashing media.');
+          }
+          bytesRead += result.bytesRead;
+        }
+      }
+    } finally {
+      await fileHandle.close();
     }
+  }
 
-  });
+  const bufferWithSize = Buffer.concat([data, Buffer.from(fileSize.toString())]);
+  return hasher('md5').update(bufferWithSize.toString('hex')).digest('hex');
 }
 
 /**
@@ -480,7 +483,7 @@ export function extractMetadataAsync(
       maxBuffer: 16 * 1024 * 1024,
       // Large or remote files can legitimately take longer than one minute to
       // inspect. A finite upper bound still prevents an orphaned probe process.
-      timeout: 5 * 60 * 1000,
+      timeout: getFfprobeTimeoutMs(filePath),
       windowsHide: true,
     }, (err, data, stderr) => {
       if (err) {
@@ -520,7 +523,7 @@ export function extractMetadataAsync(
           hashFileAsync(filePath, fileStat).then((hash) => {
             imageElement.hash = hash;
             resolve(imageElement);
-          });
+          }, reject);
 
         });
 

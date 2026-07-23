@@ -17,6 +17,7 @@ import type { RightClickEmit, VideoClickEmit } from '../../../../../interfaces/s
       '../film-and-full.scss',
       '../time-and-rez.scss',
       '../selected.scss',
+      '../import-error-placeholder.scss',
       './filmstrip.component.scss'
     ],
   animations: [ textAppear, metaAppear ]
@@ -55,7 +56,7 @@ export class FilmstripComponent implements OnInit {
   }
 
   updateFilmXoffset(mouseMove: PointerEvent) {
-    if (this.hoverScrub()) {
+    if (this.hoverScrub() && this.video().screens > 0) {
       const imgWidth = this.imgHeight() * (16 / 9); // hardcoded aspect ratio
       const containerWidth = this.filmstripHolder().nativeElement.getBoundingClientRect().width;
       const howManyScreensOutsideCutoff = this.video().screens - Math.floor(containerWidth / imgWidth);

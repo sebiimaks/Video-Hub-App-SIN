@@ -7,6 +7,7 @@ import { FilePathService } from '../file-path.service';
 import { ImageElementService } from './../../../services/image-element.service';
 
 import type { ImageElement } from '../../../../../interfaces/final-object.interface';
+import { isMetadataImportFailure } from '../../../../../interfaces/final-object.interface';
 import type { RightClickEmit, VideoClickEmit } from '../../../../../interfaces/shared-interfaces';
 
 import { metaAppear, textAppear } from '../../../common/animations';
@@ -19,6 +20,7 @@ import { metaAppear, textAppear } from '../../../common/animations';
       '../clip-and-preview.scss',
       '../time-and-rez.scss',
       './clip.component.scss',
+      '../import-error-placeholder.scss',
       '../selected.scss'
     ],
   animations: [ textAppear, metaAppear ]
@@ -85,6 +87,10 @@ export class ClipComponent implements OnInit {
   }
 
   ngOnInit() {
+
+    if (isMetadataImportFailure(this.video)) {
+      this.noError = false;
+    }
 
     if (this.defaultThumbnailMode()) {
       this.posterFolderType = 'thumbnails';

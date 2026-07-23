@@ -102,6 +102,19 @@
     }
 
     <!-- ========================== regular view ========================== -->
+  @if (!noError) {
+    <div
+      class="import-error-placeholder"
+      (click)="videoClick.emit({ mouseEvent: $event })"
+      (dblclick)="videoClick.emit({ mouseEvent: $event, doubleClick: true })"
+      (contextmenu)="rightClick.emit({ mouseEvent: $event, item: video })"
+      title="import_error"
+    >
+      <app-icon [icon]="'icon-video-x'" [size]="32" />
+      <span>import_error</span>
+    </div>
+  }
+
   @if (noError && !autoplay()) {
     <video
       [src]="pathToVideo"

@@ -28,6 +28,7 @@ import { SortOrderComponent } from './sort-order/sort-order.component';
 // Interfaces
 import type { ContextMenuCoordinate } from '../../../interfaces/shared-interfaces';
 import type { FinalObject, ImageElement, ScreenshotSettings, ResolutionString } from '../../../interfaces/final-object.interface';
+import { IMPORT_ERROR_TAG, isMetadataImportFailure } from '../../../interfaces/final-object.interface';
 import type { ImportStage } from '../../../node/main-support';
 import type { ServerDetails } from './statistics/statistics.component';
 import type { RemoteSettings, SettingsButtonSavedProperties, SettingsObject } from '../../../interfaces/settings-object.interface';
@@ -886,6 +887,43 @@ export class HomeComponent implements OnInit, AfterViewInit {
         return;
       }
 
+      // A failed path is intentionally rescanned. Replace its path-only entry
+      // rather than appending a duplicate, preserving any user-entered data.
+      const existingFailureIndex = this.imageElementService.imageElements.findIndex((currentElement) => {
+        return isMetadataImportFailure(currentElement)
+          && currentElement.inputSource === element.inputSource
+          && currentElement.partialPath === element.partialPath
+          && currentElement.fileName === element.fileName;
+      });
+
+      if (existingFailureIndex !== -1) {
+        const existingFailure = this.imageElementService.imageElements[existingFailureIndex];
+        const probeStillFailed = isMetadataImportFailure(element);
+        this.copyMetaProperties(element, existingFailure);
+        element.defaultScreen = existingFailure.defaultScreen;
+        element.lastPlayed = existingFailure.lastPlayed;
+        element.playlist = existingFailure.playlist;
+        element.tags = (existingFailure.tags || []).filter((tag) => {
+          return probeStillFailed || tag !== IMPORT_ERROR_TAG;
+        });
+
+        if (probeStillFailed && !element.tags.includes(IMPORT_ERROR_TAG)) {
+          element.tags.push(IMPORT_ERROR_TAG);
+        }
+        if (!probeStillFailed) {
+          delete element.metadataImportFailed;
+          if (this.manualTagsService.tagsFrequencyMap.has(IMPORT_ERROR_TAG)) {
+            this.manualTagsService.removeTag(IMPORT_ERROR_TAG);
+          }
+        }
+
+        element.index = existingFailureIndex;
+        this.imageElementService.imageElements[existingFailureIndex] = element;
+        this.imageElementService.finalArrayNeedsSaving = true;
+        this.resetFinalArrayRef();
+        return;
+      }
+
       // if the element is part of any of the deleted videos, copy over the metadata into it !
       // important for when user renames a folder for example
       this.imageElementService.imageElements
@@ -899,6 +937,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
         });
 
       if (!this.demo || this.imageElementService.imageElements.length <= 50) {
+        if (isMetadataImportFailure(element)) {
+          element.tags = element.tags || [];
+          if (!element.tags.includes(IMPORT_ERROR_TAG)) {
+            element.tags.push(IMPORT_ERROR_TAG);
+          }
+          this.manualTagsService.addTag(IMPORT_ERROR_TAG);
+        }
         element.index = this.imageElementService.imageElements.length;
         this.imageElementService.imageElements.push(element); // not enough for view to update; we need `.slice()`
         this.imageElementService.finalArrayNeedsSaving = true;
