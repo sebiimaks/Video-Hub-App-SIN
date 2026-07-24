@@ -1,7 +1,7 @@
 {
   "name": "video-hub-app-sin",
   "productName": "Video Hub App SIN",
-  "version": "3.3.0-sin.7",
+  "version": "3.3.0-sin.8",
   "description": "Video Hub App SIN - an unsupported personal fork for browsing, searching, previewing, and managing videos",
   "homepage": "https://github.com/sebiimaks/Video-Hub-App-SIN",
   "repository": {
@@ -41,7 +41,7 @@
     "check:tsc": "tsc --project ./tsconfig.json --noEmit && tsc --project ./tsconfig-serve.json --noEmit && tsc --project ./tsconfig.worker.json --noEmit",
     "hasRemote": "sh ./bin/hasRemoteCheck.sh",
     "electron": "npm run hasRemote && npm run media:prepare && npm run build:prod && electron-builder build && npm run media:source && npm run buildsize",
-    "electron:mac:release": "npm run hasRemote && npm run media:prepare && npm run build:prod && electron-builder build --mac dmg --arm64 && npm run media:source && npm run buildsize",
+    "electron:mac:release": "npm run hasRemote && npm run media:prepare && npm run build:prod && electron-builder build --mac dmg --arm64 && npm run media:source && npm run verify:mac:release && npm run buildsize",
     "electron:mac:test": "npm run hasRemote && npm run media:prepare && npm run build:prod && electron-builder build --mac dir --arm64 --config.directories.output=release-test && npm run media:source:test && npm run verify:mac:test",
     "electron:serve": "wait-on tcp:4200 && npm run electron:serve-tsc && npx electron . --serve",
     "electron:serve-tsc": "tsc -p tsconfig-serve.json",
@@ -60,6 +60,7 @@
     "test:local-safety": "ts-node --project tsconfig.persistence-tests.json node/local-operation-safety.test.ts",
     "test:media-toolchain": "ts-node --project tsconfig.persistence-tests.json node/media-toolchain.test.ts",
     "test:persistence": "ts-node --project tsconfig.persistence-tests.json node/vha-file-persistence.test.ts",
+    "verify:mac:release": "node ./bin/verify-packaged-app.mjs './release/mac-arm64/Video Hub App SIN.app'",
     "verify:mac:test": "node ./bin/verify-packaged-app.mjs './release-test/mac-arm64/Video Hub App SIN.app'"
   },
   "dependencies": {

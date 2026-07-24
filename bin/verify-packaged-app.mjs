@@ -15,17 +15,19 @@ const packageVersion = JSON.parse(
 ).version;
 const require = createRequire(import.meta.url);
 const asar = require('@electron/asar');
-const correspondingSourcePath = process.argv[3] || path.join(
-  projectDirectory,
-  'release-test',
-  `video-hub-app-sin-media-source-v${packageVersion}.tar.xz`,
-);
 
 if (!appPath) {
   throw new Error('Usage: node bin/verify-packaged-app.mjs <macOS .app> [corresponding-source archive]');
 }
 
-const resourcesPath = path.join(path.resolve(appPath), 'Contents', 'Resources');
+const resolvedAppPath = path.resolve(appPath);
+const buildOutputDirectory = path.dirname(path.dirname(resolvedAppPath));
+const correspondingSourcePath = process.argv[3] || path.join(
+  buildOutputDirectory,
+  `video-hub-app-sin-media-source-v${packageVersion}.tar.xz`,
+);
+
+const resourcesPath = path.join(resolvedAppPath, 'Contents', 'Resources');
 const ffmpegPath = path.join(resourcesPath, 'media-tools', 'ffmpeg');
 const ffprobePath = path.join(resourcesPath, 'media-tools', 'ffprobe');
 const requiredResources = [
