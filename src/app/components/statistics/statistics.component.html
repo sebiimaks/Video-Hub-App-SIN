@@ -15,7 +15,7 @@
     <div class="input-sources-row">
       <span
         class="stats-heading folder input-folder"
-        [innerHtml]="item.value.path | folderArrowsPipe"
+        [innerHtml]="item.value.path | folderArrowsPipe : true"
       ></span>
 
     @if ((objectKeys(inputFolders()).length > 1) && removeFoldersMode) {

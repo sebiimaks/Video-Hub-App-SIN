@@ -106,7 +106,7 @@
   position: relative;
 
   & + & {
-    margin-top: 18px;
+    margin-top: 8px;
   }
 }
 
@@ -268,6 +268,10 @@
 }
 
 :host-context(.settings-modal-dark) {
+  ::ng-deep .input-folder .folder-path-final-segment {
+    color: variables.$white;
+  }
+
   .stats-heading,
   .watch-folder-note {
     color: variables.$gray-20;
