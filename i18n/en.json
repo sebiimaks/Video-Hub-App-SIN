@@ -259,6 +259,7 @@
     "errorMustNotBeEmpty": "new file name may not be empty",
     "errorSomeError": "Some error occurred",
     "openFolder": "Open folder",
+    "regenerateThumbnails": "Regenerate thumbnails",
     "renameButton": "RENAME",
     "renameFile": "Rename file",
     "renameFrom": "from:",
@@ -267,6 +268,8 @@
     "sheetModal": "Details",
     "showSimilar": "Show similar",
     "shuffle": "Shuffle results",
+    "thumbnailRegenerationComplete": "Thumbnails regenerated",
+    "thumbnailRegenerationFailed": "Could not regenerate thumbnails",
     "viewFolder": "View folder"
   },
   "SETTINGS": {

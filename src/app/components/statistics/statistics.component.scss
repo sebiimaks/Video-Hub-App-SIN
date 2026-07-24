@@ -104,10 +104,6 @@
   display: block;
   min-height: 28px;
   position: relative;
-
-  & + & {
-    margin-top: 8px;
-  }
 }
 
 .input-sources + .edit-mode-container {

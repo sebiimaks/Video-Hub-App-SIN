@@ -242,7 +242,24 @@
           <span>{{ item.width }} x {{ item.height }}</span>
           <span>{{ item.fileSize | fileSizePipe : true }}</span>
           <span>{{ item.fps || 0 }} fps</span>
-          <span>{{ item.hash }}</span>
+          <div class="catalogue-hash">
+            <span
+              class="catalogue-hash-value"
+              [title]="item.hash || 'No hash available'"
+            >{{ item.hash || 'No hash available' }}</span>
+
+            <button
+              class="catalogue-hash-copy"
+              (click)="copyHash(item)"
+              [attr.aria-label]="'Copy hash for ' + (item.fileName || item.cleanName || 'entry')"
+              [disabled]="!item.hash"
+              [title]="item.hash ? 'Copy hash' : 'No hash available'"
+              type="button"
+            >
+              <app-icon [icon]="'icon-clipboard'" [size]="12"></app-icon>
+              <span aria-live="polite">{{ hashCopyButtonText(item) }}</span>
+            </button>
+          </div>
         </div>
       </div>
 

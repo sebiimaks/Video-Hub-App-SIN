@@ -578,6 +578,29 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.electronService.webFrame.clearCache();
     });
 
+    this.electronService.ipcRenderer.on('thumbnail-regeneration-complete', (event, fileHash: string) => {
+      this.zone.run(() => {
+        this.imageElementService.imageElements
+          .filter((element: ImageElement) => element.hash === fileHash)
+          .forEach((element: ImageElement) => {
+            element.uuid = `${element.uuid}-thumbnail-${Date.now()}`;
+          });
+        this.imageElementService.imageElements = this.imageElementService.imageElements.slice();
+
+        if (this.currentClickedItem && this.currentClickedItem.hash === fileHash) {
+          this.updateCurrentClickedItem(this.currentClickedItem);
+        }
+
+        this.modalService.openSnackbar(this.translate.instant('RIGHTCLICK.thumbnailRegenerationComplete'));
+      });
+    });
+
+    this.electronService.ipcRenderer.on('thumbnail-regeneration-failed', (event) => {
+      this.zone.run(() => {
+        this.modalService.openSnackbar(this.translate.instant('RIGHTCLICK.thumbnailRegenerationFailed'));
+      });
+    });
+
     this.electronService.ipcRenderer.on('touchBar-to-app', (event, changesFromTouchBar: SettingsButtonKey | SupportedView) => {
       if (changesFromTouchBar) {
         this.toggleButton(changesFromTouchBar, true);
@@ -2275,8 +2298,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const clientY: number = event.clientY;
     const howFarFromBottom: number = winHeight - clientY;
 
-    this.rightClickPosition.x = (howFarFromRight < 150) ? clientX - 150 + (howFarFromRight) : clientX;
-    this.rightClickPosition.y = (howFarFromBottom < 210) ? clientY - 210 + (howFarFromBottom) : clientY;
+    this.rightClickPosition.x = (howFarFromRight < 180) ? clientX - 180 + (howFarFromRight) : clientX;
+    this.rightClickPosition.y = (howFarFromBottom < 240) ? clientY - 240 + (howFarFromBottom) : clientY;
 
     this.rightClickShowing = true;
   }
@@ -2308,6 +2331,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   openThumbnailSheet(item: ImageElement): void {
     this.sheetItemToDisplay = item;
     this.sheetOverlayShowing = true;
+  }
+
+  /**
+   * Recreate all generated preview assets for the selected video.
+   */
+  regenerateThumbnails(item: ImageElement): void {
+    this.electronService.ipcRenderer.send('regenerate-thumbnails', item);
   }
 
   /**

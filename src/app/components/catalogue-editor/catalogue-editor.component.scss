@@ -346,6 +346,39 @@
   }
 }
 
+.catalogue-hash {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.catalogue-hash-value {
+  font-family: monospace;
+  max-width: 360px !important;
+}
+
+.catalogue-hash-copy {
+  align-items: center;
+  background: variables.$gray-15;
+  border: 1px solid variables.$gray-40;
+  border-radius: 4px;
+  color: variables.$gray-80;
+  display: inline-flex;
+  fill: variables.$gray-70;
+  flex: 0 0 auto;
+  font-size: 10px;
+  gap: 3px;
+  min-height: 22px;
+  padding: 2px 6px;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+}
+
 .catalogue-row-actions {
   align-items: stretch;
   display: flex;
@@ -429,6 +462,13 @@
       border: 0;
       color: variables.$gray-10;
     }
+  }
+
+  .catalogue-hash-copy {
+    background: variables.$gray-70;
+    border-color: variables.$gray-50;
+    color: variables.$gray-10;
+    fill: variables.$gray-10;
   }
 }
 

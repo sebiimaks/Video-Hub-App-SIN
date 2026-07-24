@@ -43,6 +43,10 @@ let metaExtractionStartTime = 0;
 let thumbQueue;         // QueueObject
 let thumbsDone = 0;
 let thumbExtractionStartTime = 0;
+const thumbnailRegenerationWaiters: Map<string, {
+  reject: (reason?: Error) => void;
+  resolve: () => void;
+}[]> = new Map();
 
 // delete queue
 let deleteThumbQueue;   // QueueObject
@@ -80,6 +84,10 @@ resetAllQueues();
 export function resetAllQueues(): void {
 
   allowSleep();
+
+  Array.from(thumbnailRegenerationWaiters.keys()).forEach((fileHash: string) => {
+    settleThumbnailRegeneration(fileHash, new Error('Thumbnail regeneration was cancelled.'));
+  });
 
   // kill all previeous
   if (thumbQueue && typeof thumbQueue.kill === 'function') {
@@ -164,9 +172,24 @@ function thumbQueueRunner(element: ImageElement, done): void {
   const screenshotOutputFolder: string = path.join(GLOBALS.selectedOutputFolder, 'vha-' + GLOBALS.hubName);
   const shouldExtractClips: boolean = GLOBALS.screenshotSettings.clipSnippets > 0;
 
+  const finishQueueItem = (): void => {
+    if (!thumbnailRegenerationWaiters.has(element.hash)) {
+      done();
+      return;
+    }
+
+    hasAllThumbs(element.hash, screenshotOutputFolder, shouldExtractClips)
+      .then(() => settleThumbnailRegeneration(element.hash))
+      .catch(() => settleThumbnailRegeneration(
+        element.hash,
+        new Error('The generated preview files could not be recreated.'),
+      ))
+      .finally(done);
+  };
+
   hasAllThumbs(element.hash, screenshotOutputFolder, shouldExtractClips)
     .then(() => {
-      done();
+      finishQueueItem();
     })
     .catch(() => {
       sendCurrentProgress( // TODO check whether sending data off by 1
@@ -181,9 +204,22 @@ function thumbQueueRunner(element: ImageElement, done): void {
         GLOBALS.selectedSourceFolders[element.inputSource].path,
         screenshotOutputFolder,
         GLOBALS.screenshotSettings,
-        done
+        finishQueueItem
       );
     });
+}
+
+function settleThumbnailRegeneration(fileHash: string, error?: Error): void {
+  const waiters = thumbnailRegenerationWaiters.get(fileHash) || [];
+  thumbnailRegenerationWaiters.delete(fileHash);
+
+  waiters.forEach((waiter) => {
+    if (error) {
+      waiter.reject(error);
+    } else {
+      waiter.resolve();
+    }
+  });
 }
 
 /**
@@ -575,6 +611,60 @@ export function extractAnyMissingThumbs(fullArray: ImageElement[]): void {
   if (thumbQueue.idle()) {
     finishImport();
   }
+}
+
+/**
+ * Remove and recreate all generated preview assets for one catalogue item.
+ * Uses the same extraction queue and settings as normal imports.
+ */
+export function regenerateThumbnails(element: ImageElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const fileHash: string = element && element.hash;
+    const sourceFolder = element && GLOBALS.selectedSourceFolders[element.inputSource];
+
+    if (
+      !fileHash
+      || !/^[a-zA-Z0-9_-]+$/.test(fileHash)
+      || !sourceFolder
+      || !sourceFolder.path
+      || !shouldExtractThumbnails(element)
+    ) {
+      reject(new Error('This item does not have enough metadata to regenerate its previews.'));
+      return;
+    }
+
+    const existingWaiters = thumbnailRegenerationWaiters.get(fileHash);
+    if (existingWaiters) {
+      existingWaiters.push({ reject, resolve });
+      return;
+    }
+
+    thumbnailRegenerationWaiters.set(fileHash, [{ reject, resolve }]);
+
+    const screenshotOutputFolder: string = path.join(GLOBALS.selectedOutputFolder, 'vha-' + GLOBALS.hubName);
+    const generatedFiles: string[] = [
+      path.join(screenshotOutputFolder, 'thumbnails', fileHash + '.jpg'),
+      path.join(screenshotOutputFolder, 'filmstrips', fileHash + '.jpg'),
+      path.join(screenshotOutputFolder, 'clips', fileHash + '.mp4'),
+      path.join(screenshotOutputFolder, 'clips', fileHash + '.jpg'),
+    ];
+
+    Promise.all(generatedFiles.map((generatedFile: string) => {
+      return fs.promises.unlink(generatedFile).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') {
+          throw error;
+        }
+      });
+    }))
+      .then(() => {
+        preventSleep();
+        importCompletionSent = false;
+        thumbQueue.push(element);
+      })
+      .catch((error: Error) => {
+        settleThumbnailRegeneration(fileHash, error);
+      });
+  });
 }
 
 /**

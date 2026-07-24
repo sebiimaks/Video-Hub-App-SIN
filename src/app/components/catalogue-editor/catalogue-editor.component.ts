@@ -35,6 +35,8 @@ export class CatalogueEditorComponent implements OnChanges {
   batchTagDraft = '';
   batchTagStatus = '';
   batchTagTypeahead = '';
+  hashCopyFailedIndex: number | undefined;
+  hashCopiedIndex: number | undefined;
   query = '';
   showDeleted = false;
 
@@ -88,6 +90,41 @@ export class CatalogueEditorComponent implements OnChanges {
 
     this.commitAllTagDrafts();
     this.closeEditor.emit();
+  }
+
+  async copyHash(item: ImageElement): Promise<void> {
+    const hash = item.hash || '';
+
+    if (!hash) {
+      return;
+    }
+
+    this.hashCopiedIndex = undefined;
+    this.hashCopyFailedIndex = undefined;
+
+    try {
+      await navigator.clipboard.writeText(hash);
+      this.hashCopiedIndex = item.index;
+    } catch {
+      try {
+        window.require('electron').clipboard.writeText(hash);
+        this.hashCopiedIndex = item.index;
+      } catch {
+        this.hashCopyFailedIndex = item.index;
+      }
+    }
+  }
+
+  hashCopyButtonText(item: ImageElement): string {
+    if (this.hashCopiedIndex === item.index) {
+      return 'Copied';
+    }
+
+    if (this.hashCopyFailedIndex === item.index) {
+      return 'Copy failed';
+    }
+
+    return 'Copy';
   }
 
   acceptBatchTagTypeahead(event: KeyboardEvent): void {

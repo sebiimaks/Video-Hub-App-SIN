@@ -10,7 +10,13 @@ import { ImageElement, FinalObject, InputSources } from '../interfaces/final-obj
 import { SettingsObject } from '../interfaces/settings-object.interface';
 import { createDotPlsFile, writeVhaFileToDisk } from './main-support';
 import { replaceThumbnailWithNewImage } from './main-extract';
-import { closeWatcher, startWatcher, extractAnyMissingThumbs, removeThumbnailsNotInHub } from './main-extract-async';
+import {
+  closeWatcher,
+  startWatcher,
+  extractAnyMissingThumbs,
+  regenerateThumbnails,
+  removeThumbnailsNotInHub,
+} from './main-extract-async';
 import { writeJsonAtomically } from './vha-file-persistence';
 import {
   buildPlayerLaunch,
@@ -386,6 +392,21 @@ export function setUpIpcMessages(ipc, win, pathToAppData, systemMessages) {
    */
   trustedIpcOn('add-missing-thumbnails', (event, finalArray: ImageElement[], extractClips: boolean) => {
     extractAnyMissingThumbs(finalArray);
+  });
+
+  /**
+   * Remove and recreate the generated preview assets for one video.
+   */
+  trustedIpcOn('regenerate-thumbnails', (event, item: ImageElement) => {
+    regenerateThumbnails(item)
+      .then(() => {
+        event.sender.send('thumbnail-replaced');
+        event.sender.send('thumbnail-regeneration-complete', item.hash);
+      })
+      .catch((error: Error) => {
+        console.error('Unable to regenerate thumbnails:', error);
+        event.sender.send('thumbnail-regeneration-failed');
+      });
   });
 
   /**
